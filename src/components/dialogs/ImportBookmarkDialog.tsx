@@ -4,22 +4,21 @@ import { Button } from "@/components/ui/button"
 import { Upload, FileText } from "lucide-react"
 import { useBookmarkImport } from "@/hooks/useBookmarkImport"
 
-interface ImportBookmarkDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onImported: () => void
-}
-
 interface ParsedGroup {
   name: string
   bookmarks: { title: string; url: string; icon?: string }[]
 }
 
-export function ImportBookmarkDialog({ open, onOpenChange, onImported }: ImportBookmarkDialogProps) {
-  const { parseBookmarkFile, importBookmarks } = useBookmarkImport()
+interface ImportBookmarkDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onImportStart: (groups: ParsedGroup[]) => void
+}
+
+export function ImportBookmarkDialog({ open, onOpenChange, onImportStart }: ImportBookmarkDialogProps) {
+  const { parseBookmarkFile } = useBookmarkImport()
   const [parsedGroups, setParsedGroups] = useState<ParsedGroup[]>([])
   const [fileName, setFileName] = useState("")
-  const [importing, setImporting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,15 +34,14 @@ export function ImportBookmarkDialog({ open, onOpenChange, onImported }: ImportB
     reader.readAsText(file)
   }
 
-  const handleImport = async () => {
+  const handleImport = () => {
     if (parsedGroups.length === 0) return
-    setImporting(true)
-    await importBookmarks(parsedGroups)
-    setImporting(false)
+    // 关闭弹窗，将解析数据传给父组件处理导入
+    const groupsToImport = [...parsedGroups]
     setParsedGroups([])
     setFileName("")
     onOpenChange(false)
-    onImported()
+    onImportStart(groupsToImport)
   }
 
   const totalBookmarks = parsedGroups.reduce((sum, g) => sum + g.bookmarks.length, 0)
@@ -103,10 +101,10 @@ export function ImportBookmarkDialog({ open, onOpenChange, onImported }: ImportB
           </Button>
           <Button
             onClick={handleImport}
-            disabled={parsedGroups.length === 0 || importing}
+            disabled={parsedGroups.length === 0}
             className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 cursor-pointer"
           >
-            {importing ? "导入中..." : "确认导入"}
+            确认导入
           </Button>
         </div>
       </DialogContent>
