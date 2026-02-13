@@ -6,6 +6,7 @@ import { useSidebar } from "@/contexts/SidebarContext"
 import { useToast } from "@/contexts/ToastContext"
 import { useGroups } from "@/hooks/useGroups"
 import { useBookmarks } from "@/hooks/useBookmarks"
+import { useBookmarkImport } from "@/hooks/useBookmarkImport"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { MainContent } from "@/components/layout/MainContent"
@@ -33,9 +34,13 @@ export function BookmarksPage() {
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null)
   const [defaultGroupId, setDefaultGroupId] = useState<string>("")
   const [searchOpen, setSearchOpen] = useState(false)
+  const [importing, setImporting] = useState(false)
+
+  const { importBookmarks } = useBookmarkImport()
 
   const mainContentRef = useRef<HTMLElement>(null)
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const importSkeletonRef = useRef<HTMLDivElement>(null)
   const isScrollingTo = useRef(false)
 
   // 注册 scrollToGroup 方法供 Sidebar 调用
@@ -67,28 +72,31 @@ export function BookmarksPage() {
       if (isScrollingTo.current) return
       if (groups.length === 0) return
 
-      const containerTop = container.getBoundingClientRect().top
-      let closestId: string | null = null
-      let closestDistance = Infinity
+      // 如果容器还在顶部附近（未滚动到分组区域），不选中任何二级分组
+      if (container.scrollTop < 80) {
+        setActiveGroupId(null)
+        return
+      }
 
-      for (const [groupId, el] of sectionRefs.current.entries()) {
-        const rect = el.getBoundingClientRect()
-        const distance = Math.abs(rect.top - containerTop)
-        if (rect.top <= containerTop + 100 && distance < closestDistance) {
-          closestDistance = distance
-          closestId = groupId
+      const containerTop = container.getBoundingClientRect().top
+      const threshold = containerTop + 200
+      let activeId: string | null = null
+
+      // 按 groups 顺序遍历，找最后一个顶部已滚过阈值线的分组
+      for (const group of groups) {
+        const el = sectionRefs.current.get(group.id)
+        if (!el) continue
+        if (el.getBoundingClientRect().top <= threshold) {
+          activeId = group.id
         }
       }
 
-      // 如果没有任何 section 在顶部上方，选第一个
-      if (!closestId && groups.length > 0) {
-        closestId = groups[0].id
-      }
-
-      if (closestId) {
-        setActiveGroupId(closestId)
-      }
+      // 如果没有分组滚过阈值线，说明还在页面顶部区域，清除二级选中
+      setActiveGroupId(activeId)
     }
+
+    // 初始化时执行一次检测
+    handleScroll()
 
     container.addEventListener("scroll", handleScroll, { passive: true })
     return () => container.removeEventListener("scroll", handleScroll)
@@ -130,6 +138,21 @@ export function BookmarksPage() {
     await deleteBookmark(selectedBookmark.id)
     setSelectedBookmark(null)
   }
+
+  const handleImportStart = useCallback(
+    async (parsedGroups: { name: string; bookmarks: { title: string; url: string; icon?: string }[] }[]) => {
+      setImporting(true)
+      // 等待骨架屏渲染后滚动到该位置
+      setTimeout(() => {
+        importSkeletonRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }, 50)
+      await importBookmarks(parsedGroups)
+      await fetchGroups()
+      await fetchBookmarks()
+      setImporting(false)
+    },
+    [importBookmarks, fetchGroups, fetchBookmarks]
+  )
 
   const handleExportGroup = useCallback(
     (group: BookmarkGroup) => {
@@ -190,6 +213,7 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
         {groupsLoading || bookmarksLoading ? (
           <BookmarkListSkeleton />
         ) : (
+          <>
           <BookmarkList
           groups={groups}
           getBookmarksByGroup={getBookmarksByGroup}
@@ -216,6 +240,39 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
           }}
           onExportGroup={handleExportGroup}
           />
+          {importing && (
+            <div ref={importSkeletonRef} className="mb-8 animate-pulse">
+              {/* 分组标题栏骨架 */}
+              <div className="flex items-center justify-between mb-4 h-8">
+                <div className="h-6 w-28 bg-border-strong/40 rounded-md" />
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-16 bg-border-strong/30 rounded" />
+                </div>
+              </div>
+              {/* 书签卡片网格骨架 */}
+              <div
+                className="grid gap-6"
+                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))" }}
+              >
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 p-4 rounded-[12px] bg-muted border border-transparent"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-border-strong/40 flex-shrink-0" />
+                    <div className="flex flex-col flex-1 min-w-0 gap-1.5">
+                      <div className="h-3.5 w-3/5 bg-border-strong/40 rounded" />
+                      <div className="h-3 w-4/5 bg-border-strong/30 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-center py-4">
+                <span className="text-sm text-muted-foreground">正在导入书签...</span>
+              </div>
+            </div>
+          )}
+          </>
         )}
 
         {/* 浮动按钮 */}
@@ -255,10 +312,7 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
         <ImportBookmarkDialog
           open={activeDialog === "importBookmark"}
           onOpenChange={(open) => !open && setActiveDialog(null)}
-          onImported={() => {
-            fetchGroups()
-            fetchBookmarks()
-          }}
+          onImportStart={handleImportStart}
         />
         <DeleteConfirmDialog
           open={activeDialog === "deleteGroup"}
