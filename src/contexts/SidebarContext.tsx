@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode, RefObject } from "react"
+import { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode, MutableRefObject } from "react"
 
 const COLLAPSE_BREAKPOINT = 1280
 
@@ -10,7 +10,7 @@ interface SidebarContextType {
   setActiveNav: (v: string) => void
   activeGroupId: string | null
   setActiveGroupId: (v: string | null) => void
-  scrollToGroupRef: RefObject<((groupId: string) => void) | null>
+  scrollToGroupRef: MutableRefObject<((groupId: string) => void) | null>
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
