@@ -1,15 +1,17 @@
 import { BrowserRouter, useLocation, useNavigate } from "react-router-dom"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { BookmarksPage } from "@/pages/BookmarksPage"
 import { ExplorePage } from "@/pages/ExplorePage"
 import { ToolsPage } from "@/pages/ToolsPage"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { MainContent } from "@/components/layout/MainContent"
+import { FloatingActions } from "@/components/common/FloatingActions"
 import { useGroups } from "@/hooks/useGroups"
 
 function PlaceholderLayout({ children }: { children: React.ReactNode }) {
   const { groups } = useGroups()
+  const mainContentRef = useRef<HTMLDivElement>(null)
   return (
     <AppLayout
       sidebar={
@@ -20,7 +22,10 @@ function PlaceholderLayout({ children }: { children: React.ReactNode }) {
         />
       }
     >
-      <MainContent>{children}</MainContent>
+      <MainContent ref={mainContentRef}>
+        {children}
+        <FloatingActions scrollContainerRef={mainContentRef} />
+      </MainContent>
     </AppLayout>
   )
 }
