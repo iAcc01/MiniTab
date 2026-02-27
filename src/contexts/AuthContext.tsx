@@ -21,6 +21,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const localProvider = new LocalStorageProvider()
 
+function getOrCreateSupabaseProvider(
+  ref: React.MutableRefObject<{ userId: string; provider: SupabaseProvider } | null>,
+  userId: string
+): SupabaseProvider {
+  if (ref.current && ref.current.userId === userId) {
+    return ref.current.provider
+  }
+  const provider = new SupabaseProvider(userId)
+  ref.current = { userId, provider }
+  return provider
+}
+
 function translateError(msg: string): string {
   const map: Record<string, string> = {
     "Invalid login credentials": "邮箱或密码错误",
@@ -51,19 +63,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [dataProvider, setDataProvider] = useState<IDataProvider>(localProvider)
   const initializedRef = useRef(false)
+  const supabaseProviderRef = useRef<{ userId: string; provider: SupabaseProvider } | null>(null)
 
   useEffect(() => {
     let ignore = false
 
     const initAuth = async () => {
-      // 获取当前 session
       const { data: { session: s } } = await supabase.auth.getSession()
       if (ignore) return
 
       setSession(s)
       setUser(s?.user ?? null)
       if (s?.user) {
-        setDataProvider(new SupabaseProvider(s.user.id))
+        setDataProvider(getOrCreateSupabaseProvider(supabaseProviderRef, s.user.id))
       }
       setIsLoading(false)
       initializedRef.current = true
@@ -72,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
-      // 跳过初始会话恢复事件（已在 getSession 中处理）
       if (!initializedRef.current) return
       if (ignore) return
 
@@ -80,7 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(s?.user ?? null)
 
       if (s?.user) {
-        // 仅在 SIGNED_IN 事件（用户主动登录）时执行迁移
         if (event === "SIGNED_IN" && hasLocalUserData()) {
           try {
             await migrateLocalDataToSupabase(s.user.id)
@@ -88,8 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error("Auto migration failed:", e)
           }
         }
-        setDataProvider(new SupabaseProvider(s.user.id))
+        setDataProvider(getOrCreateSupabaseProvider(supabaseProviderRef, s.user.id))
       } else {
+        supabaseProviderRef.current = null
         setDataProvider(localProvider)
       }
     })
