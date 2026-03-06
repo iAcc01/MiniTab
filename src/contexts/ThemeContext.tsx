@@ -1,36 +1,59 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 
-type Theme = "light" | "dark"
+type Mode = "light" | "dark"
+type ColorScheme = "slate" | "stone"
 
 interface ThemeContextType {
-  theme: Theme
+  mode: Mode
+  colorScheme: ColorScheme
+  setMode: (mode: Mode) => void
+  setColorScheme: (scheme: ColorScheme) => void
+  /** @deprecated 兼容旧代码 */
+  theme: Mode
+  /** @deprecated 兼容旧代码 */
   toggleTheme: () => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [mode, setMode] = useState<Mode>(() => {
     const saved = localStorage.getItem("minitab_theme")
-    return (saved as Theme) || "light"
+    return (saved as Mode) || "light"
+  })
+
+  const [colorScheme, setColorScheme] = useState<ColorScheme>(() => {
+    const saved = localStorage.getItem("minitab_color_scheme")
+    return (saved as ColorScheme) || "slate"
   })
 
   useEffect(() => {
     const root = document.documentElement
-    if (theme === "dark") {
-      root.classList.add("dark")
-    } else {
-      root.classList.remove("dark")
-    }
-    localStorage.setItem("minitab_theme", theme)
-  }, [theme])
+    root.classList.toggle("dark", mode === "dark")
+    localStorage.setItem("minitab_theme", mode)
+  }, [mode])
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.toggle("theme-stone", colorScheme === "stone")
+    localStorage.setItem("minitab_color_scheme", colorScheme)
+  }, [colorScheme])
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"))
+    setMode((prev) => (prev === "light" ? "dark" : "light"))
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{
+        mode,
+        colorScheme,
+        setMode,
+        setColorScheme,
+        theme: mode,
+        toggleTheme,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   )
