@@ -1,14 +1,123 @@
 import { supabase } from "@/lib/supabase"
 import { IDataProvider, BookmarkGroup, Bookmark } from "@/types"
 
+const DEFAULT_GROUP_NAME = "热门网站"
+
+const DEFAULT_BOOKMARKS_DATA: Omit<Bookmark, "id" | "group_id" | "created_at" | "updated_at">[] = [
+  {
+    title: "元宝",
+    url: "https://yuanbao.tencent.com",
+    description: "腾讯推出的 AI 智能助手",
+    favicon_url: "https://www.google.com/s2/favicons?domain=yuanbao.tencent.com&sz=64",
+    sort_order: 0,
+  },
+  {
+    title: "ChatGPT",
+    url: "https://chat.openai.com",
+    description: "OpenAI 推出的 AI 对话助手",
+    favicon_url: "https://www.google.com/s2/favicons?domain=chat.openai.com&sz=64",
+    sort_order: 1,
+  },
+  {
+    title: "即梦",
+    url: "https://jimeng.jianying.com",
+    description: "字节跳动推出的 AI 创作平台",
+    favicon_url: "https://www.google.com/s2/favicons?domain=jimeng.jianying.com&sz=64",
+    sort_order: 2,
+  },
+  {
+    title: "Gemini",
+    url: "https://gemini.google.com",
+    description: "Google 推出的多模态 AI 助手",
+    favicon_url: "https://www.google.com/s2/favicons?domain=gemini.google.com&sz=64",
+    sort_order: 3,
+  },
+  {
+    title: "Pinterest",
+    url: "https://www.pinterest.com",
+    description: "全球创意灵感图片分享平台",
+    favicon_url: "https://www.google.com/s2/favicons?domain=pinterest.com&sz=64",
+    sort_order: 4,
+  },
+  {
+    title: "Dribbble",
+    url: "https://dribbble.com",
+    description: "设计师作品展示与交流社区",
+    favicon_url: "https://www.google.com/s2/favicons?domain=dribbble.com&sz=64",
+    sort_order: 5,
+  },
+  {
+    title: "Behance",
+    url: "https://www.behance.net",
+    description: "Adobe 旗下创意作品展示平台",
+    favicon_url: "https://www.google.com/s2/favicons?domain=behance.net&sz=64",
+    sort_order: 6,
+  },
+]
+
 export class SupabaseProvider implements IDataProvider {
   private userId: string
+  private initialized = false
 
   constructor(userId: string) {
     this.userId = userId
   }
 
+  /**
+   * 新用户首次登录时，初始化默认的"热门网站"分组和书签
+   */
+  private async ensureDefaultData(): Promise<void> {
+    if (this.initialized) return
+    this.initialized = true
+
+    const { data: existingGroups, error } = await supabase
+      .from("bookmark_groups")
+      .select("id")
+      .eq("user_id", this.userId)
+      .limit(1)
+
+    if (error) {
+      console.error("Failed to check existing groups:", error)
+      return
+    }
+
+    // 已有数据，不需要初始化
+    if (existingGroups && existingGroups.length > 0) return
+
+    // 创建默认分组
+    const { data: groupData, error: groupError } = await supabase
+      .from("bookmark_groups")
+      .insert({
+        name: DEFAULT_GROUP_NAME,
+        user_id: this.userId,
+        sort_order: 0,
+      })
+      .select()
+      .single()
+
+    if (groupError || !groupData) {
+      console.error("Failed to create default group:", groupError)
+      return
+    }
+
+    // 创建默认书签
+    const bookmarksToInsert = DEFAULT_BOOKMARKS_DATA.map((b) => ({
+      ...b,
+      group_id: groupData.id,
+    }))
+
+    const { error: bookmarkError } = await supabase
+      .from("bookmarks")
+      .insert(bookmarksToInsert)
+
+    if (bookmarkError) {
+      console.error("Failed to create default bookmarks:", bookmarkError)
+    }
+  }
+
   async getGroups(): Promise<BookmarkGroup[]> {
+    await this.ensureDefaultData()
+
     const { data, error } = await supabase
       .from("bookmark_groups")
       .select("*")
