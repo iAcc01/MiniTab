@@ -205,7 +205,7 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
             className="flex items-center gap-2 w-[540px] h-10 px-4 rounded-xl border border-border-strong bg-background hover:border-placeholder cursor-pointer transition-colors"
           >
             <Search size={16} className="text-placeholder" />
-            <span className="text-base text-placeholder">搜索</span>
+            <span className="text-base text-placeholder">搜索或快捷添加</span>
           </button>
         </div>
 
