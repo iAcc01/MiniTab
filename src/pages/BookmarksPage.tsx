@@ -21,6 +21,7 @@ import { AddBookmarkDialog } from "@/components/dialogs/AddBookmarkDialog"
 import { EditBookmarkDialog } from "@/components/dialogs/EditBookmarkDialog"
 import { ImportBookmarkDialog } from "@/components/dialogs/ImportBookmarkDialog"
 import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog"
+import { LoginDialog } from "@/components/auth/LoginDialog"
 
 export function BookmarksPage() {
   const { isAuthenticated } = useAuth()
@@ -35,6 +36,8 @@ export function BookmarksPage() {
   const [defaultGroupId, setDefaultGroupId] = useState<string>("")
   const [searchOpen, setSearchOpen] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [prefillData, setPrefillData] = useState<{ title: string; url: string; description: string; favicon_url: string } | null>(null)
+  const [showLoginDialog, setShowLoginDialog] = useState(false)
 
   const { importBookmarks } = useBookmarkImport()
 
@@ -279,7 +282,20 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
         <FloatingActions scrollContainerRef={mainContentRef} />
 
         {/* 搜索面板 */}
-        <SearchPanel open={searchOpen} onClose={() => setSearchOpen(false)} />
+        <SearchPanel
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          onAddFromExternal={(data) => {
+            setPrefillData(data)
+            setSearchOpen(false)
+            setDefaultGroupId("")
+            setActiveDialog("addBookmark")
+          }}
+          onRequestLogin={() => {
+            setSearchOpen(false)
+            setShowLoginDialog(true)
+          }}
+        />
 
 
 
@@ -297,9 +313,15 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
         />
         <AddBookmarkDialog
           open={activeDialog === "addBookmark"}
-          onOpenChange={(open) => !open && setActiveDialog(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setActiveDialog(null)
+              setPrefillData(null)
+            }
+          }}
           groups={groups}
           defaultGroupId={defaultGroupId}
+          prefillData={prefillData}
           onConfirm={handleAddBookmark}
         />
         <EditBookmarkDialog
@@ -328,6 +350,7 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
           description="此操作不可撤销。"
           onConfirm={handleDeleteBookmark}
         />
+        <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
       </MainContent>
     </AppLayout>
   )

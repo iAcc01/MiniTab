@@ -1,12 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { Bookmark } from "@/types"
+import { searchExternal, ExternalSearchResult } from "@/lib/externalSearch"
 
 export function useSearch() {
   const { dataProvider } = useAuth()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<Bookmark[]>([])
+  const [externalResults, setExternalResults] = useState<ExternalSearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [isSearchingExternal, setIsSearchingExternal] = useState(false)
   const [isEmpty, setIsEmpty] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -14,15 +17,42 @@ export function useSearch() {
     async (q: string) => {
       if (!q.trim()) {
         setResults([])
+        setExternalResults([])
         setIsEmpty(false)
         setIsSearching(false)
+        setIsSearchingExternal(false)
         return
       }
+
+      // 先进行站内搜索
       setIsSearching(true)
+      setExternalResults([])
+      setIsSearchingExternal(false)
+
       const data = await dataProvider.searchBookmarks(q.trim())
       setResults(data)
-      setIsEmpty(data.length === 0)
       setIsSearching(false)
+
+      // 站内无结果时，自动触发外部搜索
+      if (data.length === 0) {
+        setIsEmpty(true)
+        setIsSearchingExternal(true)
+        const external = await searchExternal(q.trim())
+        setExternalResults(external)
+        setIsSearchingExternal(false)
+        if (external.length > 0) {
+          setIsEmpty(false)
+        }
+      } else {
+        setIsEmpty(false)
+        // 同时触发外部搜索作为补充
+        setIsSearchingExternal(true)
+        const external = await searchExternal(q.trim())
+        // 过滤掉站内已有的 URL
+        const existingUrls = new Set(data.map((b) => b.url))
+        setExternalResults(external.filter((r) => !existingUrls.has(r.url)))
+        setIsSearchingExternal(false)
+      }
     },
     [dataProvider]
   )
@@ -40,8 +70,19 @@ export function useSearch() {
   const clearSearch = () => {
     setQuery("")
     setResults([])
+    setExternalResults([])
     setIsEmpty(false)
+    setIsSearchingExternal(false)
   }
 
-  return { query, setQuery, results, isSearching, isEmpty, clearSearch }
+  return {
+    query,
+    setQuery,
+    results,
+    externalResults,
+    isSearching,
+    isSearchingExternal,
+    isEmpty,
+    clearSearch,
+  }
 }

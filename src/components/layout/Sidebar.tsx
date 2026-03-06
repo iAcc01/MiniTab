@@ -73,7 +73,7 @@ export function Sidebar({ groups, onCreateGroup, onImportBookmarks, onReorderGro
 
   const navItems = [
     { id: "explore", label: "发现", icon: Compass, path: "/explore" },
-    { id: "tools", label: "智能工具", icon: Sparkles, path: "/tools" },
+    { id: "tools", label: "Prompt", icon: Sparkles, path: "/tools" },
     { id: "bookmarks", label: "我的书签", icon: Chrome, path: "/bookmarks" },
   ]
 

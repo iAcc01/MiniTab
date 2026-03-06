@@ -8,11 +8,19 @@ import { BookmarkGroup } from "@/types"
 import { getFaviconUrl } from "@/hooks/useBookmarks"
 import { fetchSiteDescription } from "@/lib/fetchSiteDescription"
 
+interface PrefillData {
+  title?: string
+  url?: string
+  description?: string
+  favicon_url?: string
+}
+
 interface AddBookmarkDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   groups: BookmarkGroup[]
   defaultGroupId?: string
+  prefillData?: PrefillData | null
   onConfirm: (data: {
     title: string
     url: string
@@ -27,6 +35,7 @@ export function AddBookmarkDialog({
   onOpenChange,
   groups,
   defaultGroupId,
+  prefillData,
   onConfirm,
 }: AddBookmarkDialogProps) {
   const [title, setTitle] = useState("")
@@ -36,17 +45,17 @@ export function AddBookmarkDialog({
   const [fetchingDesc, setFetchingDesc] = useState(false)
   const descManuallyEdited = useRef(false)
 
-  // 每次打开弹窗时清空表单
+  // 每次打开弹窗时清空表单，或使用预填数据
   useEffect(() => {
     if (open) {
-      setTitle("")
-      setUrl("")
+      setTitle(prefillData?.title || "")
+      setUrl(prefillData?.url || "")
       setGroupId(defaultGroupId || "")
-      setDescription("")
+      setDescription(prefillData?.description || "")
       setFetchingDesc(false)
-      descManuallyEdited.current = false
+      descManuallyEdited.current = !!prefillData?.description
     }
-  }, [open, defaultGroupId])
+  }, [open, defaultGroupId, prefillData])
 
   useEffect(() => {
     if (!url.trim() || descManuallyEdited.current) return
