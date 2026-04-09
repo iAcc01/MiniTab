@@ -48,4 +48,28 @@ export type DialogType =
   | "importBookmark"
   | "deleteGroup"
   | "deleteBookmark"
+  | "updateNotification"
   | null
+
+// ========== 插件更新通知系统 ==========
+
+/** 更新日志条目 */
+export interface ChangelogEntry {
+  type: "feature" | "fix" | "improvement" | "breaking"
+  description: string
+}
+
+/** 版本信息 */
+export interface VersionInfo {
+  version: string
+  releaseDate: string
+  changelog: ChangelogEntry[]
+}
+
+/** 更新检查结果 */
+export interface UpdateCheckResult {
+  hasUpdate: boolean
+  currentVersion: string
+  latestVersion?: VersionInfo
+  error?: string
+}
