@@ -20,6 +20,7 @@ if (crxPlugin) {
 
 export default defineConfig({
   plugins,
+  base: isCrx ? "" : "/",
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
