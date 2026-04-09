@@ -13,9 +13,23 @@ if (isCrx) {
   crxPlugin = crx({ manifest })
 }
 
+// 自定义插件：为 Chrome 扩展构建移除 HTML 中的 crossorigin 属性
+function removeCrossOrigin(): PluginOption {
+  return {
+    name: "remove-crossorigin",
+    enforce: "post",
+    transformIndexHtml(html) {
+      return html.replace(/ crossorigin/g, "")
+    },
+  }
+}
+
 const plugins: PluginOption[] = [react()]
 if (crxPlugin) {
   plugins.push(crxPlugin)
+}
+if (isCrx) {
+  plugins.push(removeCrossOrigin())
 }
 
 export default defineConfig({
