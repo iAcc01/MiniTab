@@ -7,6 +7,7 @@ import { useToast } from "@/contexts/ToastContext"
 import { useGroups } from "@/hooks/useGroups"
 import { useBookmarks } from "@/hooks/useBookmarks"
 import { useBookmarkImport } from "@/hooks/useBookmarkImport"
+import { useUpdateCheck } from "@/hooks/useUpdateCheck"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { MainContent } from "@/components/layout/MainContent"
@@ -21,6 +22,7 @@ import { AddBookmarkDialog } from "@/components/dialogs/AddBookmarkDialog"
 import { EditBookmarkDialog } from "@/components/dialogs/EditBookmarkDialog"
 import { ImportBookmarkDialog } from "@/components/dialogs/ImportBookmarkDialog"
 import { DeleteConfirmDialog } from "@/components/dialogs/DeleteConfirmDialog"
+import { UpdateNotificationDialog } from "@/components/dialogs/UpdateNotificationDialog"
 import { LoginDialog } from "@/components/auth/LoginDialog"
 
 export function BookmarksPage() {
@@ -30,6 +32,9 @@ export function BookmarksPage() {
   const { groups, loading: groupsLoading, addGroup, updateGroup, deleteGroup, reorderGroups, fetchGroups } = useGroups()
   const { allBookmarks, loading: bookmarksLoading, fetchBookmarks, addBookmark, updateBookmark, deleteBookmark, getBookmarksByGroup } = useBookmarks()
 
+  // 插件更新检查
+  const update = useUpdateCheck()
+
   const [activeDialog, setActiveDialog] = useState<DialogType>(null)
   const [selectedGroup, setSelectedGroup] = useState<BookmarkGroup | null>(null)
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null)
@@ -38,6 +43,13 @@ export function BookmarksPage() {
   const [importing, setImporting] = useState(false)
   const [prefillData, setPrefillData] = useState<{ title: string; url: string; description: string; favicon_url: string } | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
+
+  // 自动弹出更新通知
+  useEffect(() => {
+    if (update.shouldShowNotification && activeDialog === null) {
+      setActiveDialog("updateNotification")
+    }
+  }, [update.shouldShowNotification]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { importBookmarks } = useBookmarkImport()
 
@@ -194,6 +206,8 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
           onCreateGroup={() => setActiveDialog("createGroup")}
           onImportBookmarks={() => setActiveDialog("importBookmark")}
           onReorderGroups={reorderGroups}
+          hasUpdate={update.shouldShowNotification}
+          onOpenUpdateNotification={() => setActiveDialog("updateNotification")}
         />
       }
     >
@@ -351,6 +365,24 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
           onConfirm={handleDeleteBookmark}
         />
         <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
+
+        {/* 更新通知弹窗 */}
+        {update.result?.latestVersion && (
+          <UpdateNotificationDialog
+            open={activeDialog === "updateNotification"}
+            onOpenChange={(open) => !open && setActiveDialog(null)}
+            latestVersion={update.result.latestVersion}
+            currentVersion={update.currentVersion}
+            onUpdate={() => {
+              // 立即更新 = 刷新页面加载最新资源
+              window.location.reload()
+            }}
+            onDismiss={() => {
+              update.dismissUpdate()
+              setActiveDialog(null)
+            }}
+          />
+        )}
       </MainContent>
     </AppLayout>
   )

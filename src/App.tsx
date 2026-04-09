@@ -1,5 +1,11 @@
-import { BrowserRouter, useLocation, useNavigate } from "react-router-dom"
+import { BrowserRouter, MemoryRouter, useLocation, useNavigate } from "react-router-dom"
 import { useEffect, useRef } from "react"
+
+// 检测是否运行在 Chrome 扩展环境中
+const isChromeExtension =
+  typeof chrome !== "undefined" &&
+  typeof chrome.runtime !== "undefined" &&
+  typeof chrome.runtime.id !== "undefined"
 import { BookmarksPage } from "@/pages/BookmarksPage"
 import { ExplorePage } from "@/pages/ExplorePage"
 import { ToolsPage } from "@/pages/ToolsPage"
@@ -65,10 +71,11 @@ function AppShell() {
 }
 
 function App() {
+  const Router = isChromeExtension ? MemoryRouter : BrowserRouter
   return (
-    <BrowserRouter>
+    <Router {...(isChromeExtension ? { initialEntries: ["/bookmarks"] } : {})}>
       <AppShell />
-    </BrowserRouter>
+    </Router>
   )
 }
 

@@ -3,7 +3,64 @@
 @tailwind utilities;
 
 @layer base {
+  /* ===== 默认主题：冷蓝 (Slate + Blue) ===== */
   :root {
+    --background: #F8FAFC;
+    --foreground: #0F172A;
+    --card: #FFFFFF;
+    --card-foreground: #0F172A;
+    --card-hover: #F1F5F9;
+    --popover: #FFFFFF;
+    --popover-foreground: #0F172A;
+    --primary: #2563EB;
+    --primary-foreground: #FFFFFF;
+    --secondary: #F1F5F9;
+    --secondary-foreground: #0F172A;
+    --muted: #F1F5F9;
+    --muted-foreground: #64748B;
+    --accent: #F1F5F9;
+    --accent-foreground: #0F172A;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: #E2E8F0;
+    --border-strong: #CBD5E1;
+    --input: #CBD5E1;
+    --ring: #2563EB;
+    --placeholder: #94A3B8;
+    --text-hint: #94A3B8;
+    --radius: 12px;
+  }
+
+  /* 冷蓝 暗色 */
+  .dark {
+    --background: #0F172A;
+    --foreground: #E2E8F0;
+    --card: #1E293B;
+    --card-foreground: #E2E8F0;
+    --card-hover: #334155;
+    --popover: #1E293B;
+    --popover-foreground: #E2E8F0;
+    --primary: #3B82F6;
+    --primary-foreground: #FFFFFF;
+    --secondary: #334155;
+    --secondary-foreground: #E2E8F0;
+    --muted: #1E293B;
+    --muted-foreground: #94A3B8;
+    --accent: #334155;
+    --accent-foreground: #E2E8F0;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: #334155;
+    --border-strong: #475569;
+    --input: #475569;
+    --ring: #3B82F6;
+    --placeholder: #64748B;
+    --text-hint: #64748B;
+    --radius: 12px;
+  }
+
+  /* ===== 暖石主题 (Stone) ===== */
+  .theme-stone {
     --background: #FCFBF8;
     --foreground: #1C1C1C;
     --card: #FCFBF8;
@@ -30,7 +87,8 @@
     --radius: 12px;
   }
 
-  .dark {
+  /* 暖石 暗色 */
+  .dark.theme-stone {
     --background: #1A1A1A;
     --foreground: #E5E5E5;
     --card: #1A1A1A;

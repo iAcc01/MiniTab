@@ -33,25 +33,26 @@ export function useSearch() {
       setResults(data)
       setIsSearching(false)
 
-      // 站内无结果时，自动触发外部搜索
-      if (data.length === 0) {
-        setIsEmpty(true)
-        setIsSearchingExternal(true)
-        const external = await searchExternal(q.trim())
-        setExternalResults(external)
-        setIsSearchingExternal(false)
-        if (external.length > 0) {
-          setIsEmpty(false)
-        }
-      } else {
+      // 站内已搜到结果，不再进行外部搜索
+      if (data.length > 0) {
         setIsEmpty(false)
-        // 同时触发外部搜索作为补充
-        setIsSearchingExternal(true)
-        const external = await searchExternal(q.trim())
-        // 过滤掉站内已有的 URL
-        const existingUrls = new Set(data.map((b) => b.url))
-        setExternalResults(external.filter((r) => !existingUrls.has(r.url)))
-        setIsSearchingExternal(false)
+        return
+      }
+
+      // 含非 ASCII 字符（汉字、日文、韩文等）不进行外部搜索
+      if (/[^\x00-\x7F]/.test(q)) {
+        setIsEmpty(true)
+        return
+      }
+
+      // 站内无结果且为纯英文/数字/URL 字符，触发外部搜索
+      setIsEmpty(true)
+      setIsSearchingExternal(true)
+      const external = await searchExternal(q.trim())
+      setExternalResults(external)
+      setIsSearchingExternal(false)
+      if (external.length > 0) {
+        setIsEmpty(false)
       }
     },
     [dataProvider]

@@ -8,6 +8,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MoreHorizontal,
+  ArrowUpCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
@@ -23,9 +24,11 @@ interface SidebarProps {
   onCreateGroup: () => void
   onImportBookmarks: () => void
   onReorderGroups?: (orderedIds: string[]) => void
+  hasUpdate?: boolean
+  onOpenUpdateNotification?: () => void
 }
 
-export function Sidebar({ groups, onCreateGroup, onImportBookmarks, onReorderGroups }: SidebarProps) {
+export function Sidebar({ groups, onCreateGroup, onImportBookmarks, onReorderGroups, hasUpdate, onOpenUpdateNotification }: SidebarProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isAuthenticated, signOut } = useAuth()
@@ -192,6 +195,20 @@ export function Sidebar({ groups, onCreateGroup, onImportBookmarks, onReorderGro
         )}
 
         <div className="flex-1" />
+
+        {/* 更新提示 */}
+        {hasUpdate && onOpenUpdateNotification && (
+          <div className="px-3">
+            <button
+              onClick={onOpenUpdateNotification}
+              className="flex items-center gap-2 w-[196px] h-9 pl-2 rounded-[8px] text-sm text-primary hover:bg-primary/10 cursor-pointer transition-colors"
+            >
+              <ArrowUpCircle size={18} strokeWidth={1.5} className="text-primary animate-pulse" />
+              <span className="font-medium">有新版本可用</span>
+              <span className="ml-auto mr-2 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+            </button>
+          </div>
+        )}
 
         {/* 底部用户区: left:12px top:956px */}
         <div className="px-3 pb-4 mt-auto relative">
