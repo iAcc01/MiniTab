@@ -12,7 +12,6 @@ import { GITHUB_RELEASES_URL } from "@/lib/updateService"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { MainContent } from "@/components/layout/MainContent"
-import { CarouselBanner } from "@/components/carousel/CarouselBanner"
 import { BookmarkList } from "@/components/bookmarks/BookmarkList"
 import { BookmarkListSkeleton } from "@/components/bookmarks/BookmarkSkeleton"
 import { SearchPanel } from "@/components/search/SearchPanel"
@@ -223,9 +222,6 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
             <span className="text-base text-placeholder">搜索或快捷添加</span>
           </button>
         </div>
-
-        {/* 轮播区 */}
-        <CarouselBanner />
 
         {/* 书签列表 */}
         {groupsLoading || bookmarksLoading ? (
