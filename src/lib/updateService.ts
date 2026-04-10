@@ -11,6 +11,7 @@ export const GITHUB_RELEASES_URL = "https://github.com/iAcc01/MiniTab/releases/l
 
 // 每天最多检查一次
 const CHECK_INTERVAL = 24 * 60 * 60 * 1000
+const CURRENT_VERSION_KEY = "minitab_current_version"
 
 // ==================== 版本比较 ====================
 
@@ -65,8 +66,18 @@ export function setDismissedVersion(version: string): void {
 
 // ==================== 检查时机判断 ====================
 
-/** 判断是否应该执行版本检查（每天最多一次） */
+/** 判断是否应该执行版本检查（每天最多一次，版本变化时立即检查） */
 export function shouldCheckForUpdate(): boolean {
+  // 版本变化时（扩展刚安装或刚更新），清除上次检查时间，确保立即检查
+  const currentVersion = getCurrentVersion()
+  const storedVersion = localStorage.getItem(CURRENT_VERSION_KEY)
+  if (storedVersion !== currentVersion) {
+    localStorage.setItem(CURRENT_VERSION_KEY, currentVersion)
+    localStorage.removeItem(LAST_CHECK_KEY)
+    localStorage.removeItem(DISMISSED_VERSION_KEY)
+    return true
+  }
+
   const last = localStorage.getItem(LAST_CHECK_KEY)
   if (!last) return true
   return Date.now() - new Date(last).getTime() >= CHECK_INTERVAL
