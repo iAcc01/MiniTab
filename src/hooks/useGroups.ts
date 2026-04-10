@@ -4,7 +4,7 @@ import { useToast } from "@/contexts/ToastContext"
 import { BookmarkGroup } from "@/types"
 
 export function useGroups() {
-  const { dataProvider } = useAuth()
+  const { dataProvider, isLoading: authLoading } = useAuth()
   const { showToast } = useToast()
   const [groups, setGroups] = useState<BookmarkGroup[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,8 +22,10 @@ export function useGroups() {
   }, [dataProvider, showToast])
 
   useEffect(() => {
+    // auth 还在加载时不发起请求，等 dataProvider 确定后再 fetch
+    if (authLoading) return
     fetchGroups()
-  }, [fetchGroups])
+  }, [fetchGroups, authLoading])
 
   const addGroup = async (name: string) => {
     try {

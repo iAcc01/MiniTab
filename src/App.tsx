@@ -53,19 +53,17 @@ function AppShell() {
 
   return (
     <>
-      <div style={{ display: isBookmarks ? "contents" : "none" }}>
-        <BookmarksPage />
-      </div>
-      <div style={{ display: isExplore ? "contents" : "none" }}>
+      {isBookmarks && <BookmarksPage />}
+      {isExplore && (
         <PlaceholderLayout>
           <ExplorePage />
         </PlaceholderLayout>
-      </div>
-      <div style={{ display: isTools ? "contents" : "none" }}>
+      )}
+      {isTools && (
         <PlaceholderLayout>
           <ToolsPage />
         </PlaceholderLayout>
-      </div>
+      )}
     </>
   )
 }

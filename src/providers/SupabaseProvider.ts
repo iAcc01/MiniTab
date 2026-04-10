@@ -57,19 +57,35 @@ const DEFAULT_BOOKMARKS_DATA: Omit<Bookmark, "id" | "group_id" | "created_at" | 
 
 export class SupabaseProvider implements IDataProvider {
   private userId: string
-  private initialized = false
+  private ensureDefaultPromise: Promise<void> | null = null
+
+  // 请求缓存：避免短时间内重复请求
+  private groupsCache: { data: BookmarkGroup[]; ts: number } | null = null
+  private groupsInflight: Promise<BookmarkGroup[]> | null = null
+  private static CACHE_TTL = 5000 // 5秒缓存
 
   constructor(userId: string) {
     this.userId = userId
   }
 
+  /** 清除缓存（在数据变更后调用） */
+  private invalidateGroupsCache() {
+    this.groupsCache = null
+    this.groupsInflight = null
+  }
+
   /**
    * 新用户首次登录时，初始化默认的"热门网站"分组和书签
+   * 使用 Promise 去重，防止并发调用导致多次初始化
    */
-  private async ensureDefaultData(): Promise<void> {
-    if (this.initialized) return
-    this.initialized = true
+  private ensureDefaultData(): Promise<void> {
+    if (this.ensureDefaultPromise) return this.ensureDefaultPromise
 
+    this.ensureDefaultPromise = this._doEnsureDefaultData()
+    return this.ensureDefaultPromise
+  }
+
+  private async _doEnsureDefaultData(): Promise<void> {
     const { data: existingGroups, error } = await supabase
       .from("bookmark_groups")
       .select("id")
@@ -118,6 +134,24 @@ export class SupabaseProvider implements IDataProvider {
   async getGroups(): Promise<BookmarkGroup[]> {
     await this.ensureDefaultData()
 
+    // 命中缓存
+    if (this.groupsCache && Date.now() - this.groupsCache.ts < SupabaseProvider.CACHE_TTL) {
+      return this.groupsCache.data
+    }
+
+    // 去重：如果已有在进行中的请求，复用它
+    if (this.groupsInflight) return this.groupsInflight
+
+    this.groupsInflight = this._fetchGroups()
+    try {
+      const result = await this.groupsInflight
+      return result
+    } finally {
+      this.groupsInflight = null
+    }
+  }
+
+  private async _fetchGroups(): Promise<BookmarkGroup[]> {
     const { data, error } = await supabase
       .from("bookmark_groups")
       .select("*")
@@ -127,7 +161,9 @@ export class SupabaseProvider implements IDataProvider {
       console.error("Failed to fetch groups:", error)
       return []
     }
-    return data || []
+    const result = data || []
+    this.groupsCache = { data: result, ts: Date.now() }
+    return result
   }
 
   async createGroup(name: string): Promise<BookmarkGroup> {
@@ -148,6 +184,7 @@ export class SupabaseProvider implements IDataProvider {
       console.error("Failed to create group:", error)
       throw error
     }
+    this.invalidateGroupsCache()
     return data
   }
 
@@ -162,6 +199,7 @@ export class SupabaseProvider implements IDataProvider {
       console.error("Failed to update group:", error)
       throw error
     }
+    this.invalidateGroupsCache()
     return data
   }
 
@@ -171,6 +209,7 @@ export class SupabaseProvider implements IDataProvider {
       console.error("Failed to delete group:", error)
       throw error
     }
+    this.invalidateGroupsCache()
   }
 
   async getBookmarksByGroup(groupId: string): Promise<Bookmark[]> {
@@ -187,8 +226,16 @@ export class SupabaseProvider implements IDataProvider {
   }
 
   async getAllBookmarks(): Promise<Bookmark[]> {
-    const groups = await this.getGroups()
-    if (groups.length === 0) return []
+    await this.ensureDefaultData()
+
+    // 直接通过用户分组关联查询所有书签，不再串行调 getGroups
+    const { data: groups } = await supabase
+      .from("bookmark_groups")
+      .select("id")
+      .eq("user_id", this.userId)
+
+    if (!groups || groups.length === 0) return []
+
     const groupIds = groups.map((g) => g.id)
     const { data, error } = await supabase
       .from("bookmarks")
@@ -239,8 +286,12 @@ export class SupabaseProvider implements IDataProvider {
   }
 
   async searchBookmarks(query: string): Promise<Bookmark[]> {
-    const groups = await this.getGroups()
-    if (groups.length === 0) return []
+    const { data: groups } = await supabase
+      .from("bookmark_groups")
+      .select("id")
+      .eq("user_id", this.userId)
+
+    if (!groups || groups.length === 0) return []
     const groupIds = groups.map((g) => g.id)
     const q = `%${query}%`
     const { data, error } = await supabase
@@ -265,5 +316,6 @@ export class SupabaseProvider implements IDataProvider {
       console.error("Failed to reorder groups:", failed.error)
       throw failed.error
     }
+    this.invalidateGroupsCache()
   }
 }

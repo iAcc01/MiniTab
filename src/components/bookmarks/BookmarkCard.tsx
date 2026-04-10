@@ -1,8 +1,7 @@
-import { useState, useMemo } from "react"
+import { useState, memo } from "react"
 import { Pencil, Trash2, Bookmark as BookmarkIcon } from "lucide-react"
 import { Bookmark } from "@/types"
 import { useAuth } from "@/contexts/AuthContext"
-import { cn } from "@/lib/utils"
 
 function truncateTitle(title: string, maxLen = 24): string {
   let len = 0
@@ -27,7 +26,7 @@ interface BookmarkCardProps {
   onDelete: (bookmark: Bookmark) => void
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) {
+export const BookmarkCard = memo(function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) {
   const { isAuthenticated } = useAuth()
   const [isHovered, setIsHovered] = useState(false)
   const [imgError, setImgError] = useState(false)
@@ -88,4 +87,4 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
       )}
     </div>
   )
-}
+})

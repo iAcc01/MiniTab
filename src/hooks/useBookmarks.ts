@@ -4,7 +4,7 @@ import { useToast } from "@/contexts/ToastContext"
 import { Bookmark } from "@/types"
 
 export function useBookmarks(groupId?: string) {
-  const { dataProvider } = useAuth()
+  const { dataProvider, isLoading: authLoading } = useAuth()
   const { showToast } = useToast()
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
   const [allBookmarks, setAllBookmarks] = useState<Bookmark[]>([])
@@ -27,8 +27,10 @@ export function useBookmarks(groupId?: string) {
   }, [dataProvider, groupId, showToast])
 
   useEffect(() => {
+    // auth 还在加载时不发起请求，等 dataProvider 确定后再 fetch
+    if (authLoading) return
     fetchBookmarks()
-  }, [fetchBookmarks])
+  }, [fetchBookmarks, authLoading])
 
   const addBookmark = async (data: Omit<Bookmark, "id" | "created_at" | "updated_at">) => {
     try {
