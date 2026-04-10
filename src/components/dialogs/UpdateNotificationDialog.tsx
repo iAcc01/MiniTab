@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
-  RefreshCw,
+  Download,
   X,
 } from "lucide-react"
 import type { VersionInfo, ChangelogEntry } from "@/types"
@@ -59,7 +59,7 @@ export function UpdateNotificationDialog({
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold text-foreground flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <RefreshCw size={18} className="text-primary" />
+              <Download size={18} className="text-primary" />
             </div>
             发现新版本
           </DialogTitle>
@@ -146,8 +146,8 @@ export function UpdateNotificationDialog({
             onClick={onUpdate}
             className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground hover:opacity-90 cursor-pointer"
           >
-            <RefreshCw size={14} className="mr-1.5" />
-            立即更新
+            <Download size={14} className="mr-1.5" />
+            前往下载
           </Button>
         </div>
       </DialogContent>

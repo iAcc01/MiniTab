@@ -1,0 +1,10 @@
+{
+  "version": "1.2.0",
+  "releaseDate": "2026-04-10",
+  "changelog": [
+    { "type": "feature", "description": "新增应用内更新检查与通知功能" },
+    { "type": "improvement", "description": "更新按钮改为前往 GitHub Releases 下载" },
+    { "type": "improvement", "description": "移除 mock fallback，避免误报更新" },
+    { "type": "fix", "description": "修复更新检查地址错误的问题" }
+  ]
+}

@@ -21,7 +21,7 @@ const bannerData = [
 
 export function CarouselBanner() {
   return (
-    <div className="flex gap-4 mt-6">
+    <div className="">
       {bannerData.map((item) => (
         <div
           key={item.id}

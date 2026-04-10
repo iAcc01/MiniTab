@@ -8,6 +8,7 @@ import { useGroups } from "@/hooks/useGroups"
 import { useBookmarks } from "@/hooks/useBookmarks"
 import { useBookmarkImport } from "@/hooks/useBookmarkImport"
 import { useUpdateCheck } from "@/hooks/useUpdateCheck"
+import { GITHUB_RELEASES_URL } from "@/lib/updateService"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { MainContent } from "@/components/layout/MainContent"
@@ -374,8 +375,9 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
             latestVersion={update.result.latestVersion}
             currentVersion={update.currentVersion}
             onUpdate={() => {
-              // 立即更新 = 刷新页面加载最新资源
-              window.location.reload()
+              // 打开 GitHub Releases 页面下载新版本
+              window.open(GITHUB_RELEASES_URL, "_blank")
+              setActiveDialog(null)
             }}
             onDismiss={() => {
               update.dismissUpdate()

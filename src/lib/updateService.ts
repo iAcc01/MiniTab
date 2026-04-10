@@ -4,7 +4,10 @@ import type { VersionInfo, UpdateCheckResult } from "@/types"
 
 const DISMISSED_VERSION_KEY = "minitab_dismissed_version"
 const LAST_CHECK_KEY = "minitab_last_check_time"
-const UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/user/minitab-v2/main/update-manifest.json"
+const UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/iAcc01/MiniTab/main/update-manifest.json"
+
+/** GitHub Releases 下载页地址 */
+export const GITHUB_RELEASES_URL = "https://github.com/iAcc01/MiniTab/releases/latest"
 
 // 每天最多检查一次
 const CHECK_INTERVAL = 24 * 60 * 60 * 1000
@@ -71,26 +74,8 @@ export function shouldCheckForUpdate(): boolean {
 
 // ==================== 远程版本检查 ====================
 
-/**
- * 模拟远程版本数据（生产中替换为真实 API）
- */
-function getMockLatestVersion(): VersionInfo {
-  return {
-    version: "1.1.0",
-    releaseDate: new Date().toISOString().split("T")[0],
-    changelog: [
-      { type: "feature", description: "新增插件更新通知系统" },
-      { type: "feature", description: "新增更新日志查看功能" },
-      { type: "improvement", description: "优化书签搜索性能，结果响应更快" },
-      { type: "improvement", description: "改进暗色模式下的视觉体验" },
-      { type: "fix", description: "修复导入书签时偶尔丢失图标的问题" },
-      { type: "fix", description: "修复侧边栏在窄屏下的布局异常" },
-    ],
-  }
-}
-
 /** 从远程获取最新版本信息 */
-async function fetchLatestVersion(signal?: AbortSignal): Promise<VersionInfo> {
+async function fetchLatestVersion(signal?: AbortSignal): Promise<VersionInfo | null> {
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 8000)
@@ -105,8 +90,8 @@ async function fetchLatestVersion(signal?: AbortSignal): Promise<VersionInfo> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return (await res.json()) as VersionInfo
   } catch {
-    // 网络请求失败时使用 mock 数据（开发/测试用）
-    return getMockLatestVersion()
+    // 网络请求失败时静默返回 null，不误报更新
+    return null
   }
 }
 
@@ -121,6 +106,14 @@ export async function checkForUpdate(signal?: AbortSignal): Promise<UpdateCheckR
 
     // 更新最后检查时间
     localStorage.setItem(LAST_CHECK_KEY, new Date().toISOString())
+
+    // 网络请求失败，没有获取到远程版本信息
+    if (!latest) {
+      return {
+        hasUpdate: false,
+        currentVersion,
+      }
+    }
 
     const hasUpdate = compareVersions(latest.version, currentVersion) > 0
 
