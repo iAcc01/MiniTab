@@ -16,6 +16,7 @@ import { BookmarkList } from "@/components/bookmarks/BookmarkList"
 import { BookmarkListSkeleton } from "@/components/bookmarks/BookmarkSkeleton"
 import { SearchPanel } from "@/components/search/SearchPanel"
 import { FloatingActions } from "@/components/common/FloatingActions"
+import { UpdateBadge } from "@/components/common/UpdateBadge"
 import { CreateGroupDialog } from "@/components/dialogs/CreateGroupDialog"
 import { EditGroupDialog } from "@/components/dialogs/EditGroupDialog"
 import { AddBookmarkDialog } from "@/components/dialogs/AddBookmarkDialog"
@@ -43,13 +44,6 @@ export function BookmarksPage() {
   const [importing, setImporting] = useState(false)
   const [prefillData, setPrefillData] = useState<{ title: string; url: string; description: string; favicon_url: string } | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
-
-  // 自动弹出更新通知
-  useEffect(() => {
-    if (update.shouldShowNotification && activeDialog === null) {
-      setActiveDialog("updateNotification")
-    }
-  }, [update.shouldShowNotification]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { importBookmarks } = useBookmarkImport()
 
@@ -206,14 +200,19 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
           onCreateGroup={() => setActiveDialog("createGroup")}
           onImportBookmarks={() => setActiveDialog("importBookmark")}
           onReorderGroups={reorderGroups}
-          hasUpdate={update.shouldShowNotification}
-          onOpenUpdateNotification={() => setActiveDialog("updateNotification")}
         />
       }
     >
       <MainContent ref={mainContentRef}>
+        {/* 顶部栏：左上角更新标记 */}
+        <div className="flex items-center h-8 mt-1">
+          {update.shouldShowNotification && (
+            <UpdateBadge onClick={() => setActiveDialog("updateNotification")} />
+          )}
+        </div>
+
         {/* 搜索栏 */}
-        <div className="flex justify-center mt-3">
+        <div className="flex justify-center mt-1">
           <button
             onClick={() => setSearchOpen(true)}
             className="flex items-center gap-2 w-[540px] h-10 px-4 rounded-xl border border-border-strong bg-background hover:border-placeholder cursor-pointer transition-colors"

@@ -4,6 +4,7 @@ import type { VersionInfo, UpdateCheckResult } from "@/types"
 
 const DISMISSED_VERSION_KEY = "minitab_dismissed_version"
 const LAST_CHECK_KEY = "minitab_last_check_time"
+const CACHED_UPDATE_KEY = "minitab_cached_update"
 const UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/iAcc01/MiniTab/main/update-manifest.json"
 
 /** GitHub Releases 下载页地址 */
@@ -64,6 +65,44 @@ export function setDismissedVersion(version: string): void {
   localStorage.setItem(DISMISSED_VERSION_KEY, version)
 }
 
+// ==================== 缓存更新结果 ====================
+
+/** 缓存检测到的更新信息（持久化到 localStorage） */
+export function setCachedUpdate(result: UpdateCheckResult): void {
+  if (result.hasUpdate && result.latestVersion) {
+    localStorage.setItem(CACHED_UPDATE_KEY, JSON.stringify(result))
+  } else {
+    localStorage.removeItem(CACHED_UPDATE_KEY)
+  }
+}
+
+/** 读取缓存的更新信息 */
+export function getCachedUpdate(): UpdateCheckResult | null {
+  try {
+    const raw = localStorage.getItem(CACHED_UPDATE_KEY)
+    if (!raw) return null
+    const cached = JSON.parse(raw) as UpdateCheckResult
+    // 验证缓存的版本是否仍然比当前版本新（用户可能已经手动更新了）
+    if (cached.hasUpdate && cached.latestVersion) {
+      const current = getCurrentVersion()
+      if (compareVersions(cached.latestVersion.version, current) > 0) {
+        return cached
+      }
+      // 已经是最新版本，清除缓存
+      localStorage.removeItem(CACHED_UPDATE_KEY)
+    }
+    return null
+  } catch {
+    localStorage.removeItem(CACHED_UPDATE_KEY)
+    return null
+  }
+}
+
+/** 清除缓存的更新信息 */
+export function clearCachedUpdate(): void {
+  localStorage.removeItem(CACHED_UPDATE_KEY)
+}
+
 // ==================== 检查时机判断 ====================
 
 /** 判断是否应该执行版本检查（每天最多一次，版本变化时立即检查） */
@@ -75,6 +114,7 @@ export function shouldCheckForUpdate(): boolean {
     localStorage.setItem(CURRENT_VERSION_KEY, currentVersion)
     localStorage.removeItem(LAST_CHECK_KEY)
     localStorage.removeItem(DISMISSED_VERSION_KEY)
+    localStorage.removeItem(CACHED_UPDATE_KEY)
     return true
   }
 

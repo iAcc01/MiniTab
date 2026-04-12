@@ -6,6 +6,9 @@ import {
   getCurrentVersion,
   getDismissedVersion,
   setDismissedVersion,
+  getCachedUpdate,
+  setCachedUpdate,
+  clearCachedUpdate,
 } from "@/lib/updateService"
 
 interface UseUpdateCheckReturn {
@@ -20,13 +23,14 @@ interface UseUpdateCheckReturn {
 }
 
 export function useUpdateCheck(): UseUpdateCheckReturn {
-  const [result, setResult] = useState<UpdateCheckResult | null>(null)
+  // 初始化时先从 localStorage 读取缓存的更新结果，实现"常驻"
+  const [result, setResult] = useState<UpdateCheckResult | null>(() => getCachedUpdate())
   const abortRef = useRef<AbortController | null>(null)
   const checkedRef = useRef(false)
 
   const currentVersion = getCurrentVersion()
 
-  // 初始化：启动时自动检查一次（满足时间间隔时）
+  // 启动时自动检查一次（满足时间间隔时）
   useEffect(() => {
     if (checkedRef.current) return
     checkedRef.current = true
@@ -39,6 +43,8 @@ export function useUpdateCheck(): UseUpdateCheckReturn {
     checkForUpdate(controller.signal).then((res) => {
       if (!controller.signal.aborted) {
         setResult(res)
+        // 持久化检查结果到 localStorage
+        setCachedUpdate(res)
       }
     })
 
@@ -51,6 +57,7 @@ export function useUpdateCheck(): UseUpdateCheckReturn {
   const dismissUpdate = useCallback(() => {
     if (result?.latestVersion) {
       setDismissedVersion(result.latestVersion.version)
+      clearCachedUpdate()
       setResult(null)
     }
   }, [result])
