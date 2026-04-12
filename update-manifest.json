@@ -1,11 +1,9 @@
 {
-  "version": "1.2.5",
+  "version": "1.2.6",
   "releaseDate": "2026-04-12",
   "changelog": [
-    { "type": "feature", "description": "新版本检测后在左上角常驻显示「✨ 新版本」胶囊标记" },
-    { "type": "improvement", "description": "大幅优化新标签页加载速度" },
-    { "type": "improvement", "description": "减少重复网络请求，首屏请求从 ~11 次降至 ~3 次" },
-    { "type": "improvement", "description": "缩短更新检查间隔，更及时收到版本更新通知" },
-    { "type": "fix", "description": "修复多页面同时挂载导致的重复数据加载" }
+    { "type": "improvement", "description": "优化更新流程，覆盖文件夹即可更新，无需卸载重装" },
+    { "type": "improvement", "description": "登录态持久化增强，卸载重装后可自动恢复登录" },
+    { "type": "fix", "description": "固定扩展 ID，避免重装后存储数据丢失" }
   ]
 }

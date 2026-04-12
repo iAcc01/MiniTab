@@ -40,10 +40,21 @@ jobs:
           files: mini-tab-extension.zip
           generate_release_notes: true
           body: |
-            ## 安装方式
+            ## 🆕 更新方式（已安装过的用户）
 
             1. 下载 `mini-tab-extension.zip`
-            2. 解压到一个文件夹
+            2. 解压并**覆盖**原来的文件夹（替换所有文件）
+            3. 打开 `chrome://extensions/`，找到 MiniTab，点击 🔄 **刷新**按钮
+            4. 完成！无需卸载，登录态和数据完全保留
+
+            > ⚠️ **请勿卸载旧版本再安装**，直接覆盖文件夹即可更新，否则可能需要重新登录。
+
+            ---
+
+            ## 📦 首次安装
+
+            1. 下载 `mini-tab-extension.zip`
+            2. 解压到一个固定的文件夹（后续更新会覆盖此文件夹）
             3. 打开 Chrome，访问 `chrome://extensions/`
             4. 开启右上角「开发者模式」
             5. 点击「加载已解压的扩展程序」
