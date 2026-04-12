@@ -1,9 +1,9 @@
 {
-  "version": "1.2.2",
-  "releaseDate": "2026-04-10",
+  "version": "1.2.3",
+  "releaseDate": "2026-04-12",
   "changelog": [
-    { "type": "feature", "description": "新增应用内更新检查与通知功能" },
-    { "type": "improvement", "description": "移除顶部轮播 Banner，页面更简洁" },
-    { "type": "fix", "description": "修复更新检查网络权限问题" }
+    { "type": "improvement", "description": "大幅优化新标签页加载速度" },
+    { "type": "improvement", "description": "减少重复网络请求，首屏请求从 ~11 次降至 ~3 次" },
+    { "type": "fix", "description": "修复多页面同时挂载导致的重复数据加载" }
   ]
 }
