@@ -9,8 +9,8 @@ const UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/iAcc01/MiniTab/ma
 /** GitHub Releases 下载页地址 */
 export const GITHUB_RELEASES_URL = "https://github.com/iAcc01/MiniTab/releases/latest"
 
-// 每天最多检查一次
-const CHECK_INTERVAL = 24 * 60 * 60 * 1000
+// 每 4 小时最多检查一次
+const CHECK_INTERVAL = 4 * 60 * 60 * 1000
 const CURRENT_VERSION_KEY = "minitab_current_version"
 
 // ==================== 版本比较 ====================

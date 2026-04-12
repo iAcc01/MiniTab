@@ -1,9 +1,10 @@
 {
-  "version": "1.2.3",
+  "version": "1.2.4",
   "releaseDate": "2026-04-12",
   "changelog": [
     { "type": "improvement", "description": "大幅优化新标签页加载速度" },
     { "type": "improvement", "description": "减少重复网络请求，首屏请求从 ~11 次降至 ~3 次" },
+    { "type": "improvement", "description": "缩短更新检查间隔，更及时收到版本更新通知" },
     { "type": "fix", "description": "修复多页面同时挂载导致的重复数据加载" }
   ]
 }
