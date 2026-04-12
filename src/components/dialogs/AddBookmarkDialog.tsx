@@ -79,8 +79,8 @@ export function AddBookmarkDialog({
 
   const handleConfirm = () => {
     if (!title.trim() || !url.trim() || !groupId) return
-    let faviconUrl = ""
-    if (url.startsWith("http")) {
+    let faviconUrl = prefillData?.favicon_url || ""
+    if (!faviconUrl && url.startsWith("http")) {
       faviconUrl = getFaviconUrl(url)
     }
     onConfirm({

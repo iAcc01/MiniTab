@@ -10,8 +10,8 @@ const UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/iAcc01/MiniTab/ma
 /** GitHub Releases 下载页地址 */
 export const GITHUB_RELEASES_URL = "https://github.com/iAcc01/MiniTab/releases/latest"
 
-// 每 4 小时最多检查一次
-const CHECK_INTERVAL = 4 * 60 * 60 * 1000
+// TODO: 调试完成后恢复检查间隔限制（每 4 小时最多检查一次）
+// const CHECK_INTERVAL = 4 * 60 * 60 * 1000
 const CURRENT_VERSION_KEY = "minitab_current_version"
 
 // ==================== 版本比较 ====================
@@ -125,20 +125,21 @@ export function shouldCheckForUpdate(): boolean {
 
 /** 从远程获取最新版本信息 */
 async function fetchLatestVersion(signal?: AbortSignal): Promise<VersionInfo | null> {
-  try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 8000)
+  const controller = !signal ? new AbortController() : null
+  const timeout = controller ? setTimeout(() => controller.abort(), 8000) : null
 
+  try {
     const res = await fetch(UPDATE_MANIFEST_URL, {
-      signal: signal ?? controller.signal,
+      signal: signal ?? controller!.signal,
       cache: "no-store",
     })
 
-    clearTimeout(timeout)
+    if (timeout) clearTimeout(timeout)
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return (await res.json()) as VersionInfo
   } catch {
+    if (timeout) clearTimeout(timeout)
     // 网络请求失败时静默返回 null，不误报更新
     return null
   }

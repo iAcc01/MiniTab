@@ -32,7 +32,7 @@ export function SearchPanel({ open, onClose, onAddFromExternal, onRequestLogin }
     } else {
       clearSearch()
     }
-  }, [open])
+  }, [open, clearSearch])
 
   if (!open) return null
 

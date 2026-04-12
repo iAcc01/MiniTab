@@ -1,7 +1,6 @@
 import { useState, forwardRef } from "react"
 import { Plus, Pencil, Download, Trash2 } from "lucide-react"
 import { BookmarkGroup, Bookmark } from "@/types"
-import { useAuth } from "@/contexts/AuthContext"
 import { BookmarkCard } from "./BookmarkCard"
 import { AddBookmarkCard } from "./AddBookmarkCard"
 
@@ -26,7 +25,6 @@ export const BookmarkGroupSection = forwardRef<HTMLDivElement, BookmarkGroupSect
   onDeleteGroup,
   onExportGroup,
 }, ref) {
-  const { isAuthenticated } = useAuth()
   const [isHovered, setIsHovered] = useState(false)
 
   const actionButtons = [
@@ -45,7 +43,7 @@ export const BookmarkGroupSection = forwardRef<HTMLDivElement, BookmarkGroupSect
         onMouseLeave={() => setIsHovered(false)}
       >
         <h2 className="text-xl font-semibold text-foreground leading-8">{group.name}</h2>
-        {isHovered && isAuthenticated && (
+        {isHovered && (
           <div className="flex items-center gap-2">
             {actionButtons.map((btn) => (
               <button
@@ -71,7 +69,7 @@ export const BookmarkGroupSection = forwardRef<HTMLDivElement, BookmarkGroupSect
             onDelete={onDeleteBookmark}
           />
         ))}
-        {isAuthenticated && bookmarks.length === 0 && (
+        {bookmarks.length === 0 && (
           <AddBookmarkCard onClick={() => onAddBookmark(group.id)} />
         )}
       </div>

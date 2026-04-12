@@ -8,10 +8,6 @@ interface ThemeContextType {
   colorScheme: ColorScheme
   setMode: (mode: Mode) => void
   setColorScheme: (scheme: ColorScheme) => void
-  /** @deprecated 兼容旧代码 */
-  theme: Mode
-  /** @deprecated 兼容旧代码 */
-  toggleTheme: () => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -39,10 +35,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("minitab_color_scheme", colorScheme)
   }, [colorScheme])
 
-  const toggleTheme = () => {
-    setMode((prev) => (prev === "light" ? "dark" : "light"))
-  }
-
   return (
     <ThemeContext.Provider
       value={{
@@ -50,8 +42,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         colorScheme,
         setMode,
         setColorScheme,
-        theme: mode,
-        toggleTheme,
       }}
     >
       {children}

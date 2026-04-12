@@ -68,13 +68,13 @@ export function useSearch() {
     }
   }, [query, search])
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setQuery("")
     setResults([])
     setExternalResults([])
     setIsEmpty(false)
     setIsSearchingExternal(false)
-  }
+  }, [])
 
   return {
     query,

@@ -9,6 +9,7 @@ interface FloatingActionsProps {
 export function FloatingActions({ scrollContainerRef }: FloatingActionsProps) {
   const { mode, colorScheme, setMode, setColorScheme } = useTheme()
   const [open, setOpen] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -20,6 +21,22 @@ export function FloatingActions({ scrollContainerRef }: FloatingActionsProps) {
     if (open) document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [open])
+
+  // 监听滚动容器，判断是否显示回到顶部按钮
+  useEffect(() => {
+    const container = scrollContainerRef?.current ?? window
+    const handleScroll = () => {
+      const scrollTop =
+        scrollContainerRef?.current
+          ? scrollContainerRef.current.scrollTop
+          : window.scrollY
+      setShowScrollTop(scrollTop > 100)
+    }
+    // 初始判断
+    handleScroll()
+    container.addEventListener("scroll", handleScroll, { passive: true })
+    return () => container.removeEventListener("scroll", handleScroll)
+  }, [scrollContainerRef])
 
   const scrollToTop = () => {
     const container = scrollContainerRef?.current
@@ -108,7 +125,11 @@ export function FloatingActions({ scrollContainerRef }: FloatingActionsProps) {
       </div>
       <button
         onClick={scrollToTop}
-        className="w-10 h-10 rounded-full bg-card-hover hover:bg-border-strong flex items-center justify-center cursor-pointer transition-colors shadow-menu"
+        className={`w-10 h-10 rounded-full bg-card-hover hover:bg-border-strong flex items-center justify-center cursor-pointer transition-all shadow-menu ${
+          showScrollTop
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-2 pointer-events-none"
+        }`}
         title="回到顶部"
       >
         <ArrowUp size={18} className="text-foreground" />

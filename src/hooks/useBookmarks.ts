@@ -86,6 +86,10 @@ export function useBookmarks(groupId?: string) {
 }
 
 export function getFaviconUrl(url: string): string {
-  const domain = new URL(url).hostname
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+  try {
+    const domain = new URL(url).hostname
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+  } catch {
+    return ""
+  }
 }

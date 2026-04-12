@@ -1,4 +1,5 @@
 import { IDataProvider, BookmarkGroup, Bookmark } from "@/types"
+import { DEFAULT_GROUP_NAME, DEFAULT_BOOKMARKS_DATA } from "./defaultData"
 
 const GROUPS_KEY = "minitab_local_groups"
 const BOOKMARKS_KEY = "minitab_local_bookmarks"
@@ -10,92 +11,20 @@ function generateId(): string {
 const DEFAULT_GROUPS: BookmarkGroup[] = [
   {
     id: "default-hot",
-    name: "热门网站",
+    name: DEFAULT_GROUP_NAME,
     sort_order: 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
 ]
 
-const DEFAULT_BOOKMARKS: Bookmark[] = [
-  {
-    id: "bk-1",
-    group_id: "default-hot",
-    title: "元宝",
-    url: "https://yuanbao.tencent.com",
-    description: "腾讯推出的 AI 智能助手",
-    favicon_url: "https://www.google.com/s2/favicons?domain=yuanbao.tencent.com&sz=64",
-    sort_order: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "bk-2",
-    group_id: "default-hot",
-    title: "ChatGPT",
-    url: "https://chat.openai.com",
-    description: "OpenAI 推出的 AI 对话助手",
-    favicon_url: "https://www.google.com/s2/favicons?domain=chat.openai.com&sz=64",
-    sort_order: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "bk-3",
-    group_id: "default-hot",
-    title: "即梦",
-    url: "https://jimeng.jianying.com",
-    description: "字节跳动推出的 AI 创作平台",
-    favicon_url: "https://www.google.com/s2/favicons?domain=jimeng.jianying.com&sz=64",
-    sort_order: 2,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "bk-4",
-    group_id: "default-hot",
-    title: "Gemini",
-    url: "https://gemini.google.com",
-    description: "Google 推出的多模态 AI 助手",
-    favicon_url: "https://www.google.com/s2/favicons?domain=gemini.google.com&sz=64",
-    sort_order: 3,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "bk-5",
-    group_id: "default-hot",
-    title: "Pinterest",
-    url: "https://www.pinterest.com",
-    description: "全球创意灵感图片分享平台",
-    favicon_url: "https://www.google.com/s2/favicons?domain=pinterest.com&sz=64",
-    sort_order: 4,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "bk-6",
-    group_id: "default-hot",
-    title: "Dribbble",
-    url: "https://dribbble.com",
-    description: "设计师作品展示与交流社区",
-    favicon_url: "https://www.google.com/s2/favicons?domain=dribbble.com&sz=64",
-    sort_order: 5,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "bk-7",
-    group_id: "default-hot",
-    title: "Behance",
-    url: "https://www.behance.net",
-    description: "Adobe 旗下创意作品展示平台",
-    favicon_url: "https://www.google.com/s2/favicons?domain=behance.net&sz=64",
-    sort_order: 6,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-]
+const DEFAULT_BOOKMARKS: Bookmark[] = DEFAULT_BOOKMARKS_DATA.map((b, i) => ({
+  ...b,
+  id: `bk-${i + 1}`,
+  group_id: "default-hot",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+}))
 
 function getLocalGroups(): BookmarkGroup[] {
   const data = localStorage.getItem(GROUPS_KEY)

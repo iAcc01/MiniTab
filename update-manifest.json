@@ -1,8 +1,11 @@
 {
-  "version": "1.2.7",
+  "version": "1.2.8",
   "releaseDate": "2026-04-12",
   "changelog": [
-    { "type": "improvement", "description": "更新提示按钮移至右上角，视觉更协调" },
-    { "type": "improvement", "description": "版本检查改为每次打开新标签页即时检测，更快收到更新通知" }
+    { "type": "fix", "description": "修复未登录用户无法编辑/删除本地书签的问题" },
+    { "type": "fix", "description": "修复搜索添加书签时 favicon 丢失的问题" },
+    { "type": "fix", "description": "修复删除分组未清理关联书签数据的问题" },
+    { "type": "improvement", "description": "代码规范化整理，清理冗余代码和弃用接口" },
+    { "type": "improvement", "description": "更新徽章颜色跟随主题配色" }
   ]
 }

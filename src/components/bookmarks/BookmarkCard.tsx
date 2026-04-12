@@ -1,7 +1,6 @@
 import { useState, memo } from "react"
 import { Pencil, Trash2, Bookmark as BookmarkIcon } from "lucide-react"
 import { Bookmark } from "@/types"
-import { useAuth } from "@/contexts/AuthContext"
 
 function truncateTitle(title: string, maxLen = 24): string {
   let len = 0
@@ -27,7 +26,6 @@ interface BookmarkCardProps {
 }
 
 export const BookmarkCard = memo(function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) {
-  const { isAuthenticated } = useAuth()
   const [isHovered, setIsHovered] = useState(false)
   const [imgError, setImgError] = useState(false)
 
@@ -63,7 +61,7 @@ export const BookmarkCard = memo(function BookmarkCard({ bookmark, onEdit, onDel
           {bookmark.description || getHostname(bookmark.url)}
         </span>
       </div>
-      {isHovered && isAuthenticated && (
+      {isHovered && (
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={(e) => {
