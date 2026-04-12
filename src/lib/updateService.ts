@@ -105,9 +105,10 @@ export function clearCachedUpdate(): void {
 
 // ==================== 检查时机判断 ====================
 
-/** 判断是否应该执行版本检查（每天最多一次，版本变化时立即检查） */
+/** 判断是否应该执行版本检查（当前为调试模式：每次打开都检查） */
 export function shouldCheckForUpdate(): boolean {
-  // 版本变化时（扩展刚安装或刚更新），清除上次检查时间，确保立即检查
+  // TODO: 调试完成后恢复检查间隔限制
+  // 版本变化时，清除缓存确保干净状态
   const currentVersion = getCurrentVersion()
   const storedVersion = localStorage.getItem(CURRENT_VERSION_KEY)
   if (storedVersion !== currentVersion) {
@@ -115,12 +116,9 @@ export function shouldCheckForUpdate(): boolean {
     localStorage.removeItem(LAST_CHECK_KEY)
     localStorage.removeItem(DISMISSED_VERSION_KEY)
     localStorage.removeItem(CACHED_UPDATE_KEY)
-    return true
   }
 
-  const last = localStorage.getItem(LAST_CHECK_KEY)
-  if (!last) return true
-  return Date.now() - new Date(last).getTime() >= CHECK_INTERVAL
+  return true
 }
 
 // ==================== 远程版本检查 ====================

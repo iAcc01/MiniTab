@@ -204,8 +204,8 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
       }
     >
       <MainContent ref={mainContentRef}>
-        {/* 顶部栏：左上角更新标记 */}
-        <div className="flex items-center h-8 mt-1">
+        {/* 顶部栏：右上角更新标记 */}
+        <div className="flex items-center justify-end h-8 mt-1">
           {update.shouldShowNotification && (
             <UpdateBadge onClick={() => setActiveDialog("updateNotification")} />
           )}

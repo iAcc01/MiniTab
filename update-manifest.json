@@ -1,9 +1,8 @@
 {
-  "version": "1.2.6",
+  "version": "1.2.7",
   "releaseDate": "2026-04-12",
   "changelog": [
-    { "type": "improvement", "description": "优化更新流程，覆盖文件夹即可更新，无需卸载重装" },
-    { "type": "improvement", "description": "登录态持久化增强，卸载重装后可自动恢复登录" },
-    { "type": "fix", "description": "固定扩展 ID，避免重装后存储数据丢失" }
+    { "type": "improvement", "description": "更新提示按钮移至右上角，视觉更协调" },
+    { "type": "improvement", "description": "版本检查改为每次打开新标签页即时检测，更快收到更新通知" }
   ]
 }
