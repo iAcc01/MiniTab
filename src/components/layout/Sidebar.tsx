@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import {
   Compass,
-  Sparkles,
   Chrome,
   Plus,
   PanelLeftClose,
@@ -49,9 +48,6 @@ export function Sidebar({ groups, onCreateGroup, onImportBookmarks, onReorderGro
     if (path.startsWith("/explore")) {
       setActiveNav("explore")
       setActiveGroupId(null)
-    } else if (path.startsWith("/tools")) {
-      setActiveNav("tools")
-      setActiveGroupId(null)
     } else {
       setActiveNav("bookmarks")
     }
@@ -73,7 +69,6 @@ export function Sidebar({ groups, onCreateGroup, onImportBookmarks, onReorderGro
 
   const navItems = [
     { id: "explore", label: "发现", icon: Compass, path: "/explore" },
-    { id: "tools", label: "Prompt", icon: Sparkles, path: "/tools" },
     { id: "bookmarks", label: "我的书签", icon: Chrome, path: "/bookmarks" },
   ]
 

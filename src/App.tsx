@@ -8,7 +8,6 @@ const isChromeExtension =
   typeof chrome.runtime.id !== "undefined"
 import { BookmarksPage } from "@/pages/BookmarksPage"
 import { ExplorePage } from "@/pages/ExplorePage"
-import { ToolsPage } from "@/pages/ToolsPage"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { MainContent } from "@/components/layout/MainContent"
@@ -42,14 +41,13 @@ function AppShell() {
   const currentPath = location.pathname
 
   useEffect(() => {
-    if (currentPath !== "/bookmarks" && currentPath !== "/explore" && currentPath !== "/tools") {
+    if (currentPath !== "/bookmarks" && currentPath !== "/explore") {
       navigate("/bookmarks", { replace: true })
     }
   }, [currentPath, navigate])
 
-  const isBookmarks = currentPath === "/bookmarks" || (currentPath !== "/explore" && currentPath !== "/tools")
   const isExplore = currentPath === "/explore"
-  const isTools = currentPath === "/tools"
+  const isBookmarks = !isExplore
 
   return (
     <>
@@ -57,11 +55,6 @@ function AppShell() {
       {isExplore && (
         <PlaceholderLayout>
           <ExplorePage />
-        </PlaceholderLayout>
-      )}
-      {isTools && (
-        <PlaceholderLayout>
-          <ToolsPage />
         </PlaceholderLayout>
       )}
     </>
