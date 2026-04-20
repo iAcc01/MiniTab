@@ -3,15 +3,45 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/contexts/ToastContext"
 import { Bookmark } from "@/types"
 
+const BOOKMARKS_SNAPSHOT_KEY = "minitab_snapshot_bookmarks"
+
+/** 读取书签快照 */
+function readBookmarksSnapshot(): Bookmark[] | null {
+  try {
+    const raw = localStorage.getItem(BOOKMARKS_SNAPSHOT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+/** 写入书签快照 */
+function writeBookmarksSnapshot(bookmarks: Bookmark[]) {
+  try {
+    localStorage.setItem(BOOKMARKS_SNAPSHOT_KEY, JSON.stringify(bookmarks))
+  } catch {
+    // 静默失败，快照仅为加速缓存
+  }
+}
+
 export function useBookmarks(groupId?: string) {
   const { dataProvider, isLoading: authLoading } = useAuth()
   const { showToast } = useToast()
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
-  const [allBookmarks, setAllBookmarks] = useState<Bookmark[]>([])
-  const [loading, setLoading] = useState(true)
+
+  // Phase1: 从快照初始化 allBookmarks，有快照则 loading=false
+  const [allBookmarks, setAllBookmarks] = useState<Bookmark[]>(() => {
+    return readBookmarksSnapshot() ?? []
+  })
+  const [loading, setLoading] = useState(() => {
+    return readBookmarksSnapshot() === null
+  })
 
   const fetchBookmarks = useCallback(async () => {
-    setLoading(true)
+    // 如果有快照缓存，后台静默刷新不显示 loading
+    if (!readBookmarksSnapshot()) setLoading(true)
     try {
       if (groupId) {
         const data = await dataProvider.getBookmarksByGroup(groupId)
@@ -19,6 +49,7 @@ export function useBookmarks(groupId?: string) {
       }
       const all = await dataProvider.getAllBookmarks()
       setAllBookmarks(all)
+      writeBookmarksSnapshot(all) // Phase2: 刷新快照
     } catch {
       showToast("error", "获取书签失败，请稍后重试")
     } finally {
@@ -35,7 +66,11 @@ export function useBookmarks(groupId?: string) {
   const addBookmark = async (data: Omit<Bookmark, "id" | "created_at" | "updated_at">) => {
     try {
       const newBookmark = await dataProvider.createBookmark(data)
-      setAllBookmarks((prev) => [...prev, newBookmark])
+      setAllBookmarks((prev) => {
+        const next = [...prev, newBookmark]
+        writeBookmarksSnapshot(next)
+        return next
+      })
       if (data.group_id === groupId) {
         setBookmarks((prev) => [...prev, newBookmark])
       }
@@ -49,7 +84,11 @@ export function useBookmarks(groupId?: string) {
   const updateBookmark = async (id: string, data: Partial<Bookmark>) => {
     try {
       const updated = await dataProvider.updateBookmark(id, data)
-      setAllBookmarks((prev) => prev.map((b) => (b.id === id ? updated : b)))
+      setAllBookmarks((prev) => {
+        const next = prev.map((b) => (b.id === id ? updated : b))
+        writeBookmarksSnapshot(next)
+        return next
+      })
       setBookmarks((prev) => prev.map((b) => (b.id === id ? updated : b)))
       showToast("success", "书签已更新")
       return updated
@@ -61,7 +100,11 @@ export function useBookmarks(groupId?: string) {
   const deleteBookmark = async (id: string) => {
     try {
       await dataProvider.deleteBookmark(id)
-      setAllBookmarks((prev) => prev.filter((b) => b.id !== id))
+      setAllBookmarks((prev) => {
+        const next = prev.filter((b) => b.id !== id)
+        writeBookmarksSnapshot(next)
+        return next
+      })
       setBookmarks((prev) => prev.filter((b) => b.id !== id))
       showToast("success", "书签已删除")
     } catch {

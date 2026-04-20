@@ -22,7 +22,10 @@ interface UseUpdateCheckReturn {
   dismissUpdate: () => void
 }
 
-export function useUpdateCheck(): UseUpdateCheckReturn {
+/**
+ * @param ready 外部信号：true 表示页面内容已就绪，可以开始检查更新（默认 true）
+ */
+export function useUpdateCheck(ready: boolean = true): UseUpdateCheckReturn {
   // 初始化时先从 localStorage 读取缓存的更新结果，实现"常驻"
   const [result, setResult] = useState<UpdateCheckResult | null>(() => getCachedUpdate())
   const abortRef = useRef<AbortController | null>(null)
@@ -30,28 +33,42 @@ export function useUpdateCheck(): UseUpdateCheckReturn {
 
   const currentVersion = getCurrentVersion()
 
-  // 启动时自动检查一次（满足时间间隔时）
+  // Phase3: 等 ready=true 后，利用空闲时段执行更新检查
   useEffect(() => {
+    if (!ready) return
     if (checkedRef.current) return
     checkedRef.current = true
 
     if (!shouldCheckForUpdate()) return
 
-    const controller = new AbortController()
-    abortRef.current = controller
+    const startCheck = () => {
+      const controller = new AbortController()
+      abortRef.current = controller
 
-    checkForUpdate(controller.signal).then((res) => {
-      if (!controller.signal.aborted) {
-        setResult(res)
-        // 持久化检查结果到 localStorage
-        setCachedUpdate(res)
-      }
-    })
-
-    return () => {
-      controller.abort()
+      checkForUpdate(controller.signal).then((res) => {
+        if (!controller.signal.aborted) {
+          setResult(res)
+          // 持久化检查结果到 localStorage
+          setCachedUpdate(res)
+        }
+      })
     }
-  }, [])
+
+    // 优先使用 requestIdleCallback 在浏览器空闲时执行，降级用 setTimeout
+    if (typeof requestIdleCallback === "function") {
+      const idleId = requestIdleCallback(startCheck, { timeout: 3000 })
+      return () => {
+        cancelIdleCallback(idleId)
+        abortRef.current?.abort()
+      }
+    } else {
+      const timerId = setTimeout(startCheck, 1500)
+      return () => {
+        clearTimeout(timerId)
+        abortRef.current?.abort()
+      }
+    }
+  }, [ready])
 
   // 忽略本次更新
   const dismissUpdate = useCallback(() => {

@@ -33,8 +33,9 @@ export function BookmarksPage() {
   const { groups, loading: groupsLoading, addGroup, updateGroup, deleteGroup, reorderGroups, fetchGroups } = useGroups()
   const { allBookmarks, loading: bookmarksLoading, fetchBookmarks, addBookmark, updateBookmark, deleteBookmark, getBookmarksByGroup } = useBookmarks()
 
-  // 插件更新检查
-  const update = useUpdateCheck()
+  // Phase3: 内容就绪后再检查更新
+  const contentReady = !groupsLoading && !bookmarksLoading
+  const update = useUpdateCheck(contentReady)
 
   const [activeDialog, setActiveDialog] = useState<DialogType>(null)
   const [selectedGroup, setSelectedGroup] = useState<BookmarkGroup | null>(null)

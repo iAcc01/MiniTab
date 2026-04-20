@@ -3,17 +3,48 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/contexts/ToastContext"
 import { BookmarkGroup } from "@/types"
 
+const GROUPS_SNAPSHOT_KEY = "minitab_snapshot_groups"
+
+/** 读取分组快照 */
+function readGroupsSnapshot(): BookmarkGroup[] | null {
+  try {
+    const raw = localStorage.getItem(GROUPS_SNAPSHOT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+/** 写入分组快照 */
+function writeGroupsSnapshot(groups: BookmarkGroup[]) {
+  try {
+    localStorage.setItem(GROUPS_SNAPSHOT_KEY, JSON.stringify(groups))
+  } catch {
+    // 静默失败，快照仅为加速缓存
+  }
+}
+
 export function useGroups() {
   const { dataProvider, isLoading: authLoading } = useAuth()
   const { showToast } = useToast()
-  const [groups, setGroups] = useState<BookmarkGroup[]>([])
-  const [loading, setLoading] = useState(true)
+
+  // Phase1: 从快照初始化，有快照则直接 loading=false
+  const [groups, setGroups] = useState<BookmarkGroup[]>(() => {
+    return readGroupsSnapshot() ?? []
+  })
+  const [loading, setLoading] = useState(() => {
+    return readGroupsSnapshot() === null
+  })
 
   const fetchGroups = useCallback(async () => {
-    setLoading(true)
+    // 如果有快照缓存，后台静默刷新不显示 loading
+    if (!readGroupsSnapshot()) setLoading(true)
     try {
       const data = await dataProvider.getGroups()
       setGroups(data)
+      writeGroupsSnapshot(data) // Phase2: 刷新快照
     } catch {
       showToast("error", "获取分组失败，请稍后重试")
     } finally {
@@ -30,7 +61,11 @@ export function useGroups() {
   const addGroup = async (name: string) => {
     try {
       const newGroup = await dataProvider.createGroup(name)
-      setGroups((prev) => [...prev, newGroup])
+      setGroups((prev) => {
+        const next = [...prev, newGroup]
+        writeGroupsSnapshot(next)
+        return next
+      })
       showToast("success", "分组创建成功")
       return newGroup
     } catch {
@@ -41,7 +76,11 @@ export function useGroups() {
   const updateGroup = async (id: string, name: string) => {
     try {
       const updated = await dataProvider.updateGroup(id, name)
-      setGroups((prev) => prev.map((g) => (g.id === id ? updated : g)))
+      setGroups((prev) => {
+        const next = prev.map((g) => (g.id === id ? updated : g))
+        writeGroupsSnapshot(next)
+        return next
+      })
       showToast("success", "分组已更新")
       return updated
     } catch {
@@ -52,7 +91,11 @@ export function useGroups() {
   const deleteGroup = async (id: string) => {
     try {
       await dataProvider.deleteGroup(id)
-      setGroups((prev) => prev.filter((g) => g.id !== id))
+      setGroups((prev) => {
+        const next = prev.filter((g) => g.id !== id)
+        writeGroupsSnapshot(next)
+        return next
+      })
       showToast("success", "分组已删除")
     } catch {
       showToast("error", "删除分组失败，请稍后重试")
@@ -63,12 +106,14 @@ export function useGroups() {
     // 乐观更新 UI
     setGroups((prev) => {
       const map = new Map(prev.map((g) => [g.id, g]))
-      return orderedIds
+      const next = orderedIds
         .map((id, i) => {
           const g = map.get(id)
           return g ? { ...g, sort_order: i } : null
         })
         .filter(Boolean) as BookmarkGroup[]
+      writeGroupsSnapshot(next)
+      return next
     })
     try {
       await dataProvider.reorderGroups(orderedIds)

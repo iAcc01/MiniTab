@@ -1,10 +1,8 @@
 {
-  "version": "1.3.0",
-  "releaseDate": "2026-04-13",
+  "version": "1.3.1",
+  "releaseDate": "2026-04-20",
   "changelog": [
-    { "type": "feature", "description": "发现页重构为社区型两栏布局，左侧分类网站推荐，右侧热度排行榜" },
-    { "type": "feature", "description": "新增网站数据定时爬取服务（每4小时自动更新）" },
-    { "type": "feature", "description": "新增综合热度排行与AI智能热度排行" },
-    { "type": "removed", "description": "移除 Prompt 菜单页" }
+    { "type": "feature", "description": "首屏加载性能优化：数据快照缓存，实现 <50ms 即时渲染" },
+    { "type": "feature", "description": "更新检查与页面加载解耦，内容就绪后空闲时段执行" }
   ]
 }
