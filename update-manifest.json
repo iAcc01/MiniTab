@@ -1,8 +1,8 @@
 {
-  "version": "1.3.3",
+  "version": "1.3.4",
   "releaseDate": "2026-05-11",
   "changelog": [
-    { "type": "fix", "description": "修复新添加外网书签图标裂图问题：第三方 favicon 服务 cccyun 已失效，替换为 favicon.vip" },
-    { "type": "feature", "description": "书签卡片图标加载失败时支持多级 fallback：favicon.vip → 网站根目录 /favicon.ico → 占位图标" }
+    { "type": "fix", "description": "修复内网/部分外网网站图标显示为地球占位图的问题：favicon 主源改为网站直连 /favicon.ico" },
+    { "type": "fix", "description": "外部搜索域名嗅探不再依赖 favicon.vip（其对所有域名返回 200 导致假成功），改为直连嗅探" }
   ]
 }
