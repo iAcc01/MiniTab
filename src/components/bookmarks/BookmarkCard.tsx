@@ -1,7 +1,7 @@
 import { useState, useEffect, memo, useMemo } from "react"
 import { Pencil, Trash2, Bookmark as BookmarkIcon } from "lucide-react"
 import { Bookmark } from "@/types"
-import { getFaviconFallbackUrls } from "@/lib/fetchFavicon"
+import { getFaviconFallbackUrls, isStaleFaviconUrl } from "@/lib/fetchFavicon"
 
 function truncateTitle(title: string, maxLen = 24): string {
   let len = 0
@@ -34,16 +34,23 @@ export const BookmarkCard = memo(function BookmarkCard({ bookmark, onEdit, onDel
   // -1 表示使用 bookmark.favicon_url 原值；>=0 表示使用 fallbackUrls[fallbackIndex]
   const [fallbackIndex, setFallbackIndex] = useState(-1)
 
-  // bookmark 切换时重置状态，避免不同书签共享 fallback 状态
-  useEffect(() => {
-    setImgError(false)
-    setFallbackIndex(-1)
-  }, [bookmark.id, bookmark.favicon_url])
-
   const fallbackUrls = useMemo(
     () => (bookmark.url ? getFaviconFallbackUrls(bookmark.url) : []),
     [bookmark.url]
   )
+
+  // 老数据兼容：若 favicon_url 是已知会"假成功"的失效服务（如 favicon.vip 占位地球图），
+  // 直接跳过它从 fallback 链第 0 个开始，避免存量书签永远卡在占位图上
+  const skipStaleInitial = useMemo(
+    () => isStaleFaviconUrl(bookmark.favicon_url),
+    [bookmark.favicon_url]
+  )
+
+  // bookmark 切换时重置状态，避免不同书签共享 fallback 状态
+  useEffect(() => {
+    setImgError(false)
+    setFallbackIndex(skipStaleInitial ? 0 : -1)
+  }, [bookmark.id, bookmark.favicon_url, skipStaleInitial])
 
   const handleImgError = () => {
     const nextIndex = fallbackIndex + 1

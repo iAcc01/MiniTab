@@ -76,6 +76,32 @@ export function getFaviconFallbackUrls(url: string): string[] {
 }
 
 /**
+ * 已知会"假成功"的失效/占位 favicon 服务（按子串匹配）
+ *
+ * 这些第三方服务对所有域名都返回 HTTP 200，但实际是默认占位图，
+ * 浏览器加载成功后不会触发 fallback。需要在渲染层主动跳过它们，
+ * 直接走多级 fallback 链拿到真实图标。
+ *
+ * 注意：仅用于渲染层判定，不修改用户已存的 favicon_url 字段，
+ * 完全不影响数据库/localStorage 中的存量数据。
+ */
+const STALE_FAVICON_HOSTS = [
+  "favicon.cccyun.cc",     // 已 403，但用户老数据里可能存有
+  "www.favicon.vip",       // 对所有域名返回占位地球图
+  "favicon.vip",
+  "www.google.com/s2/favicons", // 国内不稳定
+]
+
+/**
+ * 判断一个 favicon_url 是否属于已知的失效/占位服务
+ * 是的话渲染层应该跳过它，直接走 fallback 链
+ */
+export function isStaleFaviconUrl(faviconUrl: string | null | undefined): boolean {
+  if (!faviconUrl) return false
+  return STALE_FAVICON_HOSTS.some((host) => faviconUrl.includes(host))
+}
+
+/**
  * 异步获取 favicon URL（推荐，用于添加书签时）：
  * 1. 通过 CORS 代理解析 HTML 拿到 <link rel="icon"> 中的真实地址
  * 2. 解析失败 → 用 https://<domain>/favicon.ico 作为兜底（不直接用 favicon.vip）
