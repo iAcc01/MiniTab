@@ -48,9 +48,9 @@ function parseDomainsFromInput(input: string): string[] {
  * 通过加载 favicon 图片检测域名是否存在
  * <img> 标签不受 CORS 限制，这是在纯前端唯一可靠的方式
  *
- * 注：这里仍使用 Google favicon 仅做"域名是否可达"的探测，
- * 因为它对几乎所有域名都返回图片（即使是默认图标），适合用作存在性嗅探。
- * 真正展示给用户的 favicon URL 走 getFaviconUrlSync（国内可用的服务）。
+ * 注意：不能用 favicon.vip / cccyun 等第三方服务做嗅探，因为它们对所有域名
+ * 都返回 HTTP 200（默认占位图），会让所有候选域名都"假成功"。
+ * 直连目标域名的 /favicon.ico 才能真实反映域名是否可达。
  */
 function checkDomainViaFavicon(domain: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -69,8 +69,8 @@ function checkDomainViaFavicon(domain: string): Promise<boolean> {
       resolve(false)
     }
 
-    // 使用国内可访问的 favicon 服务做域名存在性嗅探
-    img.src = `https://www.favicon.vip/get.php?url=${domain}`
+    // 直接请求目标网站的 favicon.ico；不可达/不存在的域名会触发 onerror
+    img.src = `https://${domain}/favicon.ico`
   })
 }
 
