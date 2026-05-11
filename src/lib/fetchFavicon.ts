@@ -13,9 +13,24 @@
 // 内存缓存：domain -> favicon URL，避免重复请求
 const faviconCache = new Map<string, string>()
 
-/** 国内可访问的第三方 favicon 服务（作为统一回退） */
+/**
+ * 国内可访问的第三方 favicon 服务列表（按优先级排序，用于多级 fallback）
+ *
+ * 历史问题：
+ * - Google favicon (www.google.com/s2/favicons)：在中国大陆不稳定
+ * - favicon.cccyun.cc：已返回 403，不可用
+ *
+ * 当前主源：favicon.vip（国内公益服务，免费，7 天缓存）
+ * 备源：直接访问网站根目录 /favicon.ico
+ */
+const FAVICON_SERVICES: Array<(domain: string) => string> = [
+  (domain) => `https://www.favicon.vip/get.php?url=${domain}`,
+  (domain) => `https://${domain}/favicon.ico`,
+]
+
+/** 主源（用于初次渲染和缓存兜底） */
 function thirdPartyFaviconUrl(domain: string): string {
-  return `https://favicon.cccyun.cc/${domain}`
+  return FAVICON_SERVICES[0](domain)
 }
 
 /**
@@ -34,6 +49,7 @@ export function getFaviconUrlSync(url: string): string {
 
 /**
  * 渲染层使用的回退 URL：当主 favicon 加载失败时切换到该地址
+ * 兼容老调用方，等价于 getFaviconFallbackUrls(url)[0]
  */
 export function getFaviconFallbackUrl(url: string): string {
   try {
@@ -41,6 +57,19 @@ export function getFaviconFallbackUrl(url: string): string {
     return thirdPartyFaviconUrl(domain)
   } catch {
     return ""
+  }
+}
+
+/**
+ * 获取备用 favicon URL 列表（用于渲染层逐级 fallback）
+ * 当主 favicon_url 加载失败时，按顺序依次尝试这些备源
+ */
+export function getFaviconFallbackUrls(url: string): string[] {
+  try {
+    const domain = new URL(url).hostname
+    return FAVICON_SERVICES.map((make) => make(domain))
+  } catch {
+    return []
   }
 }
 

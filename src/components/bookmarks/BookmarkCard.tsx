@@ -1,7 +1,7 @@
-import { useState, useEffect, memo } from "react"
+import { useState, useEffect, memo, useMemo } from "react"
 import { Pencil, Trash2, Bookmark as BookmarkIcon } from "lucide-react"
 import { Bookmark } from "@/types"
-import { getFaviconFallbackUrl } from "@/lib/fetchFavicon"
+import { getFaviconFallbackUrls } from "@/lib/fetchFavicon"
 
 function truncateTitle(title: string, maxLen = 24): string {
   let len = 0
@@ -29,29 +29,35 @@ interface BookmarkCardProps {
 export const BookmarkCard = memo(function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imgError, setImgError] = useState(false)
-  // 渲染层 fallback：当主 favicon_url 加载失败时，自动切换到第三方服务
-  // 兼容存量数据中失效的 Google favicon URL，无需迁移用户数据
-  const [useFallback, setUseFallback] = useState(false)
+  // 渲染层多级 fallback：当主 favicon_url 加载失败时，按顺序尝试多个备源
+  // 兼容存量数据中失效的 favicon URL，无需迁移用户数据
+  // -1 表示使用 bookmark.favicon_url 原值；>=0 表示使用 fallbackUrls[fallbackIndex]
+  const [fallbackIndex, setFallbackIndex] = useState(-1)
 
   // bookmark 切换时重置状态，避免不同书签共享 fallback 状态
   useEffect(() => {
     setImgError(false)
-    setUseFallback(false)
+    setFallbackIndex(-1)
   }, [bookmark.id, bookmark.favicon_url])
 
+  const fallbackUrls = useMemo(
+    () => (bookmark.url ? getFaviconFallbackUrls(bookmark.url) : []),
+    [bookmark.url]
+  )
+
   const handleImgError = () => {
-    if (!useFallback && bookmark.url) {
-      // 第一次失败：尝试用国内第三方服务回退
-      setUseFallback(true)
+    const nextIndex = fallbackIndex + 1
+    if (nextIndex < fallbackUrls.length) {
+      // 还有备源可尝试
+      setFallbackIndex(nextIndex)
     } else {
-      // 回退也失败：显示占位图标
+      // 所有备源都失败：显示占位图标
       setImgError(true)
     }
   }
 
-  const displayFaviconUrl = useFallback
-    ? getFaviconFallbackUrl(bookmark.url)
-    : bookmark.favicon_url
+  const displayFaviconUrl =
+    fallbackIndex >= 0 ? fallbackUrls[fallbackIndex] : bookmark.favicon_url
 
   const handleClick = () => {
     window.open(bookmark.url, "_blank", "noopener,noreferrer")

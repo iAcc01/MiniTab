@@ -70,7 +70,7 @@ function checkDomainViaFavicon(domain: string): Promise<boolean> {
     }
 
     // 使用国内可访问的 favicon 服务做域名存在性嗅探
-    img.src = `https://favicon.cccyun.cc/${domain}`
+    img.src = `https://www.favicon.vip/get.php?url=${domain}`
   })
 }
 
