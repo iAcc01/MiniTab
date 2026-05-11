@@ -1,7 +1,7 @@
 import { useCallback } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/contexts/ToastContext"
-import { getFaviconUrl } from "@/hooks/useBookmarks"
+import { fetchFaviconUrl, getFaviconUrlSync } from "@/lib/fetchFavicon"
 import { fetchSiteDescription } from "@/lib/fetchSiteDescription"
 
 interface ParsedGroup {
@@ -37,20 +37,27 @@ export function useBookmarkImport() {
               ? Promise.resolve(bk.description)
               : fetchSiteDescription(bk.url).catch(() => "")
           )
-          const descriptions = await Promise.all(descPromises)
+          // 并行异步获取 favicon：优先解析 HTML 真实 favicon，失败回退第三方服务
+          // 已经是 data:URI 或 http(s) 自定义图标的直接保留
+          const faviconPromises = group.bookmarks.map((bk) => {
+            if (bk.icon && (bk.icon.startsWith("data:") || bk.icon.startsWith("http"))) {
+              return Promise.resolve(bk.icon)
+            }
+            return fetchFaviconUrl(bk.url).catch(() => getFaviconUrlSync(bk.url))
+          })
+          const [descriptions, favicons] = await Promise.all([
+            Promise.all(descPromises),
+            Promise.all(faviconPromises),
+          ])
 
           for (let i = 0; i < group.bookmarks.length; i++) {
             const bk = group.bookmarks[i]
-            let faviconUrl = bk.icon
-            if (!faviconUrl || !faviconUrl.startsWith("data:")) {
-              faviconUrl = getFaviconUrl(bk.url)
-            }
             await dataProvider.createBookmark({
               group_id: newGroup.id,
               title: bk.title,
               url: bk.url,
               description: descriptions[i] || "",
-              favicon_url: faviconUrl,
+              favicon_url: favicons[i] || "",
               sort_order: i,
             })
           }

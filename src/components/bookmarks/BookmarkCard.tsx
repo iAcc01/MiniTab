@@ -1,6 +1,7 @@
-import { useState, memo } from "react"
+import { useState, useEffect, memo } from "react"
 import { Pencil, Trash2, Bookmark as BookmarkIcon } from "lucide-react"
 import { Bookmark } from "@/types"
+import { getFaviconFallbackUrl } from "@/lib/fetchFavicon"
 
 function truncateTitle(title: string, maxLen = 24): string {
   let len = 0
@@ -28,6 +29,29 @@ interface BookmarkCardProps {
 export const BookmarkCard = memo(function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imgError, setImgError] = useState(false)
+  // 渲染层 fallback：当主 favicon_url 加载失败时，自动切换到第三方服务
+  // 兼容存量数据中失效的 Google favicon URL，无需迁移用户数据
+  const [useFallback, setUseFallback] = useState(false)
+
+  // bookmark 切换时重置状态，避免不同书签共享 fallback 状态
+  useEffect(() => {
+    setImgError(false)
+    setUseFallback(false)
+  }, [bookmark.id, bookmark.favicon_url])
+
+  const handleImgError = () => {
+    if (!useFallback && bookmark.url) {
+      // 第一次失败：尝试用国内第三方服务回退
+      setUseFallback(true)
+    } else {
+      // 回退也失败：显示占位图标
+      setImgError(true)
+    }
+  }
+
+  const displayFaviconUrl = useFallback
+    ? getFaviconFallbackUrl(bookmark.url)
+    : bookmark.favicon_url
 
   const handleClick = () => {
     window.open(bookmark.url, "_blank", "noopener,noreferrer")
@@ -41,13 +65,13 @@ export const BookmarkCard = memo(function BookmarkCard({ bookmark, onEdit, onDel
       onClick={handleClick}
     >
       <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-        {!imgError && bookmark.favicon_url ? (
+        {!imgError && displayFaviconUrl ? (
           <img
-            src={bookmark.favicon_url}
+            src={displayFaviconUrl}
             alt=""
             className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-125"
             loading="lazy"
-            onError={() => setImgError(true)}
+            onError={handleImgError}
           />
         ) : (
           <BookmarkIcon className="w-5 h-5 text-muted-foreground transition-transform duration-200 group-hover:scale-125" />

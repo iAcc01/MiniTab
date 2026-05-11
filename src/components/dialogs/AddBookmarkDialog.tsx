@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BookmarkGroup } from "@/types"
-import { getFaviconUrl } from "@/hooks/useBookmarks"
+import { fetchFaviconUrl, getFaviconUrlSync } from "@/lib/fetchFavicon"
 import { fetchSiteDescription } from "@/lib/fetchSiteDescription"
 
 interface PrefillData {
@@ -44,6 +44,8 @@ export function AddBookmarkDialog({
   const [description, setDescription] = useState("")
   const [fetchingDesc, setFetchingDesc] = useState(false)
   const descManuallyEdited = useRef(false)
+  // 异步预获取的 favicon URL（解析 HTML 得到的真实地址）
+  const prefetchedFaviconRef = useRef<string>("")
 
   // 每次打开弹窗时清空表单，或使用预填数据
   useEffect(() => {
@@ -54,6 +56,7 @@ export function AddBookmarkDialog({
       setDescription(prefillData?.description || "")
       setFetchingDesc(false)
       descManuallyEdited.current = !!prefillData?.description
+      prefetchedFaviconRef.current = prefillData?.favicon_url || ""
     }
   }, [open, defaultGroupId, prefillData])
 
@@ -77,11 +80,32 @@ export function AddBookmarkDialog({
     return () => clearTimeout(timer)
   }, [url])
 
-  const handleConfirm = () => {
+  // URL 变化时异步预获取 favicon（优先解析 HTML 中的真实 favicon）
+  useEffect(() => {
+    if (!url.trim() || !url.startsWith("http")) return
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      try {
+        const icon = await fetchFaviconUrl(url.trim())
+        if (!cancelled && icon) {
+          prefetchedFaviconRef.current = icon
+        }
+      } catch {
+        // ignore
+      }
+    }, 600)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [url])
+
+  const handleConfirm = async () => {
     if (!title.trim() || !url.trim() || !groupId) return
-    let faviconUrl = prefillData?.favicon_url || ""
+    let faviconUrl = prefillData?.favicon_url || prefetchedFaviconRef.current || ""
     if (!faviconUrl && url.startsWith("http")) {
-      faviconUrl = getFaviconUrl(url)
+      // 兜底：异步解析失败/未及时返回时，先用同步版本（第三方服务）
+      faviconUrl = getFaviconUrlSync(url)
     }
     onConfirm({
       title: title.trim(),
@@ -100,6 +124,7 @@ export function AddBookmarkDialog({
     setGroupId(defaultGroupId || "")
     setDescription("")
     descManuallyEdited.current = false
+    prefetchedFaviconRef.current = ""
   }
 
   return (

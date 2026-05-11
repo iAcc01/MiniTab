@@ -1,8 +1,8 @@
 {
-  "version": "1.3.1",
-  "releaseDate": "2026-04-20",
+  "version": "1.3.2",
+  "releaseDate": "2026-05-11",
   "changelog": [
-    { "type": "feature", "description": "首屏加载性能优化：数据快照缓存，实现 <50ms 即时渲染" },
-    { "type": "feature", "description": "更新检查与页面加载解耦，内容就绪后空闲时段执行" }
+    { "type": "fix", "description": "修复新添加书签 logo 加载不出来的问题：替换 Google favicon 为国内可用服务，并优先解析网站真实 favicon" },
+    { "type": "feature", "description": "书签卡片渲染层 favicon 自动回退，兼容存量数据" }
   ]
 }

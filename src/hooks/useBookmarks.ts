@@ -128,11 +128,7 @@ export function useBookmarks(groupId?: string) {
   }
 }
 
-export function getFaviconUrl(url: string): string {
-  try {
-    const domain = new URL(url).hostname
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
-  } catch {
-    return ""
-  }
-}
+// favicon 获取统一收口到 src/lib/fetchFavicon.ts
+// 同步版本（getFaviconUrl）使用国内第三方服务，避免 Google favicon 在中国大陆不可用的问题
+// 异步版本（fetchFaviconUrl）会优先解析目标站点 HTML 中的真实 favicon
+export { getFaviconUrlSync as getFaviconUrl, fetchFaviconUrl } from "@/lib/fetchFavicon"

@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BookmarkGroup, Bookmark } from "@/types"
-import { getFaviconUrl } from "@/hooks/useBookmarks"
+import { fetchFaviconUrl, getFaviconUrlSync } from "@/lib/fetchFavicon"
 
 interface EditBookmarkDialogProps {
   open: boolean
@@ -26,6 +26,8 @@ export function EditBookmarkDialog({
   const [url, setUrl] = useState("")
   const [groupId, setGroupId] = useState("")
   const [description, setDescription] = useState("")
+  // URL 变化后异步预获取的新 favicon
+  const prefetchedFaviconRef = useRef<string>("")
 
   useEffect(() => {
     if (bookmark) {
@@ -33,14 +35,41 @@ export function EditBookmarkDialog({
       setUrl(bookmark.url)
       setGroupId(bookmark.group_id)
       setDescription(bookmark.description || "")
+      prefetchedFaviconRef.current = ""
     }
   }, [bookmark])
+
+  // URL 改变时（且和原 URL 不同），异步预获取 favicon
+  useEffect(() => {
+    if (!bookmark) return
+    if (!url.trim() || !url.startsWith("http")) return
+    if (url === bookmark.url) {
+      prefetchedFaviconRef.current = ""
+      return
+    }
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      try {
+        const icon = await fetchFaviconUrl(url.trim())
+        if (!cancelled && icon) {
+          prefetchedFaviconRef.current = icon
+        }
+      } catch {
+        // ignore
+      }
+    }, 600)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [url, bookmark])
 
   const handleConfirm = () => {
     if (!title.trim() || !url.trim() || !groupId || !bookmark) return
     let faviconUrl = bookmark.favicon_url || ""
     if (url !== bookmark.url && url.startsWith("http")) {
-      faviconUrl = getFaviconUrl(url)
+      // URL 变了：优先用异步预获取到的真实 favicon，否则同步兜底（第三方服务）
+      faviconUrl = prefetchedFaviconRef.current || getFaviconUrlSync(url)
     }
     onConfirm(bookmark.id, {
       title: title.trim(),

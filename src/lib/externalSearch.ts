@@ -1,3 +1,5 @@
+import { getFaviconUrlSync } from "./fetchFavicon"
+
 export interface ExternalSearchResult {
   title: string
   url: string
@@ -45,6 +47,10 @@ function parseDomainsFromInput(input: string): string[] {
 /**
  * 通过加载 favicon 图片检测域名是否存在
  * <img> 标签不受 CORS 限制，这是在纯前端唯一可靠的方式
+ *
+ * 注：这里仍使用 Google favicon 仅做"域名是否可达"的探测，
+ * 因为它对几乎所有域名都返回图片（即使是默认图标），适合用作存在性嗅探。
+ * 真正展示给用户的 favicon URL 走 getFaviconUrlSync（国内可用的服务）。
  */
 function checkDomainViaFavicon(domain: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -56,8 +62,6 @@ function checkDomainViaFavicon(domain: string): Promise<boolean> {
 
     img.onload = () => {
       clearTimeout(timer)
-      // Google favicon 对不存在的域名也会返回默认图标(大小很小)
-      // 但只要能加载就认为通过，后续会用代理进一步验证
       resolve(true)
     }
     img.onerror = () => {
@@ -65,8 +69,8 @@ function checkDomainViaFavicon(domain: string): Promise<boolean> {
       resolve(false)
     }
 
-    // 使用 Google favicon 服务
-    img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
+    // 使用国内可访问的 favicon 服务做域名存在性嗅探
+    img.src = `https://favicon.cccyun.cc/${domain}`
   })
 }
 
@@ -171,7 +175,7 @@ export async function searchExternal(
           title: info.title || domain,
           url: `https://${domain}`,
           description: info.description,
-          favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+          favicon_url: getFaviconUrlSync(`https://${domain}`),
         },
       ]
     } catch {
@@ -182,7 +186,7 @@ export async function searchExternal(
           title: domain,
           url: `https://${domain}`,
           description: "",
-          favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+          favicon_url: getFaviconUrlSync(`https://${domain}`),
         },
       ]
     }
@@ -202,7 +206,7 @@ export async function searchExternal(
     )
 
   if (validDomains.length === 0) {
-    // favicon 检测可能不准确（Google 对所有域名都返回图片）
+    // favicon 检测可能不准确（第三方对所有域名都返回图片）
     // 回退：对最常见的 .com 直接展示
     const primary = domains[0]
     if (primary) {
@@ -211,7 +215,7 @@ export async function searchExternal(
           title: primary,
           url: `https://${primary}`,
           description: "",
-          favicon_url: `https://www.google.com/s2/favicons?domain=${primary}&sz=64`,
+          favicon_url: getFaviconUrlSync(`https://${primary}`),
         },
       ]
     }
@@ -247,7 +251,7 @@ export async function searchExternal(
         title: title || domain,
         url: `https://${domain}`,
         description,
-        favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+        favicon_url: getFaviconUrlSync(`https://${domain}`),
       })
     }
   }
@@ -259,7 +263,7 @@ export async function searchExternal(
         title: domain,
         url: `https://${domain}`,
         description: "",
-        favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+        favicon_url: getFaviconUrlSync(`https://${domain}`),
       })
     }
   }
