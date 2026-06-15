@@ -1,13 +1,13 @@
 {
-  "version": "1.3.6",
+  "version": "1.3.7",
   "releaseDate": "2026-06-15",
   "changelog": [
+    { "type": "fix", "description": "修复大量网站图标显示为占位图的问题：增加 Google favicon API 作为 fallback 备源，覆盖不提供 /favicon.ico 的现代网站" },
     { "type": "perf", "description": "启动性能优化：Auth 初始化不再阻塞数据加载，快照数据即刻渲染，打开速度大幅提升" },
     { "type": "perf", "description": "弹窗条件挂载：未打开的弹窗不再实例化，减少不必要的组件渲染和 hooks 执行" },
     { "type": "perf", "description": "代码分割：ExplorePage 改为懒加载，首屏 JS 解析量减少" },
     { "type": "perf", "description": "Favicon 并发限制：全局队列控制最多 6 个并发加载，避免大量书签时浏览器连接池耗尽" },
-    { "type": "fix", "description": "修复部分网站图标无法显示：移除 favicon.vip 假成功占位图，使用直连 /favicon.ico + 超时兜底" },
-    { "type": "fix", "description": "内网书签图标：增加 5 秒超时机制，超时后自动回退到本地占位图标" },
-    { "type": "fix", "description": "默认书签 favicon 改用直连地址，不受 Google favicon 服务不可用影响" }
+    { "type": "fix", "description": "修复部分网站图标无法显示：移除 favicon.vip 假成功占位图，使用直连 + 超时兜底" },
+    { "type": "fix", "description": "内网书签图标：5 秒超时机制，超时后自动回退到本地占位图标" }
   ]
 }
