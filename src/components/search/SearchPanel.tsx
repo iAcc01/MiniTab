@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react"
 import { Search, ExternalLink, Plus, Loader2 } from "lucide-react"
-import { Bookmark as BookmarkIcon } from "lucide-react"
 import { useSearch } from "@/hooks/useSearch"
 import { useAuth } from "@/contexts/AuthContext"
 import { ExternalSearchResult } from "@/lib/externalSearch"
+import { FaviconImage } from "@/components/common/FaviconImage"
 
 interface SearchPanelProps {
   open: boolean
@@ -105,20 +105,11 @@ export function SearchPanel({ open, onClose, onAddFromExternal, onRequestLogin }
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-card-hover shadow-card transition-colors"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-card-hover flex items-center justify-center flex-shrink-0">
-                          {bookmark.favicon_url ? (
-                            <img
-                              src={bookmark.favicon_url}
-                              alt=""
-                              className="w-6 h-6 object-contain"
-                              onError={(e) => {
-                                ;(e.target as HTMLImageElement).style.display = "none"
-                              }}
-                            />
-                          ) : (
-                            <BookmarkIcon className="w-5 h-5 text-muted-foreground" />
-                          )}
-                        </div>
+                        <FaviconImage
+                          primaryUrl={bookmark.favicon_url}
+                          siteUrl={bookmark.url}
+                          className="w-10 h-10 rounded-xl bg-card-hover flex items-center justify-center flex-shrink-0"
+                        />
                         <div className="flex flex-col min-w-0 flex-1">
                           <span className="text-sm font-medium text-foreground truncate">
                             {bookmark.title}
@@ -156,20 +147,11 @@ export function SearchPanel({ open, onClose, onAddFromExternal, onRequestLogin }
                           className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-card-hover shadow-card transition-colors cursor-pointer"
                           onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
                         >
-                          <div className="w-10 h-10 rounded-xl bg-card-hover flex items-center justify-center flex-shrink-0">
-                            {item.favicon_url ? (
-                              <img
-                                src={item.favicon_url}
-                                alt=""
-                                className="w-6 h-6 object-contain"
-                                onError={(e) => {
-                                  ;(e.target as HTMLImageElement).style.display = "none"
-                                }}
-                              />
-                            ) : (
-                              <BookmarkIcon className="w-5 h-5 text-muted-foreground" />
-                            )}
-                          </div>
+                          <FaviconImage
+                            primaryUrl={item.favicon_url}
+                            siteUrl={item.url}
+                            className="w-10 h-10 rounded-xl bg-card-hover flex items-center justify-center flex-shrink-0"
+                          />
                           <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-sm font-medium text-foreground truncate">
                               {item.title}

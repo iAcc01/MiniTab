@@ -60,7 +60,9 @@ function translateError(msg: string): string {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  // 照片型加载：初始 isLoading=false，快照数据即刻渲染
+  // session 验证在后台静默完成，不会阻塞首屏渲染
+  const [isLoading, setIsLoading] = useState(false)
   const [dataProvider, setDataProvider] = useState<IDataProvider>(localProvider)
   const initializedRef = useRef(false)
   const supabaseProviderRef = useRef<{ userId: string; provider: SupabaseProvider } | null>(null)
@@ -69,16 +71,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let ignore = false
 
     const initAuth = async () => {
-      const { data: { session: s } } = await supabase.auth.getSession()
-      if (ignore) return
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession()
+        if (ignore) return
 
-      setSession(s)
-      setUser(s?.user ?? null)
-      if (s?.user) {
-        setDataProvider(getOrCreateSupabaseProvider(supabaseProviderRef, s.user.id))
+        setSession(s)
+        setUser(s?.user ?? null)
+        if (s?.user) {
+          setDataProvider(getOrCreateSupabaseProvider(supabaseProviderRef, s.user.id))
+        }
+      } finally {
+        if (!ignore) {
+          initializedRef.current = true
+        }
       }
-      setIsLoading(false)
-      initializedRef.current = true
     }
 
     initAuth()

@@ -1,7 +1,7 @@
-import { useState, useEffect, memo, useMemo } from "react"
+import { useState, memo } from "react"
 import { Pencil, Trash2, Bookmark as BookmarkIcon } from "lucide-react"
 import { Bookmark } from "@/types"
-import { getFaviconFallbackUrls, isStaleFaviconUrl } from "@/lib/fetchFavicon"
+import { useFaviconLoader } from "@/hooks/useFaviconLoader"
 
 function truncateTitle(title: string, maxLen = 24): string {
   let len = 0
@@ -28,43 +28,13 @@ interface BookmarkCardProps {
 
 export const BookmarkCard = memo(function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const [imgError, setImgError] = useState(false)
-  // 渲染层多级 fallback：当主 favicon_url 加载失败时，按顺序尝试多个备源
-  // 兼容存量数据中失效的 favicon URL，无需迁移用户数据
-  // -1 表示使用 bookmark.favicon_url 原值；>=0 表示使用 fallbackUrls[fallbackIndex]
-  const [fallbackIndex, setFallbackIndex] = useState(-1)
 
-  const fallbackUrls = useMemo(
-    () => (bookmark.url ? getFaviconFallbackUrls(bookmark.url) : []),
-    [bookmark.url]
+  // 统一处理图标加载：内网超时、外网跨域错误、多级 fallback、老数据中 stale URL 跳过
+  // 加载失败时 url === null，下方渲染本地 BookmarkIcon 兜底
+  const { url: faviconUrl, status, onImgError } = useFaviconLoader(
+    bookmark.favicon_url,
+    bookmark.url
   )
-
-  // 老数据兼容：若 favicon_url 是已知会"假成功"的失效服务（如 favicon.vip 占位地球图），
-  // 直接跳过它从 fallback 链第 0 个开始，避免存量书签永远卡在占位图上
-  const skipStaleInitial = useMemo(
-    () => isStaleFaviconUrl(bookmark.favicon_url),
-    [bookmark.favicon_url]
-  )
-
-  // bookmark 切换时重置状态，避免不同书签共享 fallback 状态
-  useEffect(() => {
-    setImgError(false)
-    setFallbackIndex(skipStaleInitial ? 0 : -1)
-  }, [bookmark.id, bookmark.favicon_url, skipStaleInitial])
-
-  const handleImgError = () => {
-    const nextIndex = fallbackIndex + 1
-    if (nextIndex < fallbackUrls.length) {
-      // 还有备源可尝试
-      setFallbackIndex(nextIndex)
-    } else {
-      // 所有备源都失败：显示占位图标
-      setImgError(true)
-    }
-  }
-
-  const displayFaviconUrl =
-    fallbackIndex >= 0 ? fallbackUrls[fallbackIndex] : bookmark.favicon_url
 
   const handleClick = () => {
     window.open(bookmark.url, "_blank", "noopener,noreferrer")
@@ -78,15 +48,16 @@ export const BookmarkCard = memo(function BookmarkCard({ bookmark, onEdit, onDel
       onClick={handleClick}
     >
       <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-        {!imgError && displayFaviconUrl ? (
+        {status === "loaded" && faviconUrl ? (
           <img
-            src={displayFaviconUrl}
+            src={faviconUrl}
             alt=""
             className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-125"
             loading="lazy"
-            onError={handleImgError}
+            onError={onImgError}
           />
         ) : (
+          // status === "loading" 时也展示占位，避免空白闪烁
           <BookmarkIcon className="w-5 h-5 text-muted-foreground transition-transform duration-200 group-hover:scale-125" />
         )}
       </div>

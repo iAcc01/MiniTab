@@ -5,13 +5,16 @@
  * 1. 优先通过 CORS 代理抓取目标站点 HTML，解析 <link rel="icon"> 等标签得到真实 favicon
  * 2. 解析失败 → 直接用 https://<domain>/favicon.ico（浏览器从用户机器请求，
  *    内网网站只要用户处于登录态就能拿到真实图标）
- * 3. 渲染层在加载失败时再做多级 fallback：原始 url → /favicon.ico → favicon.vip
+ * 3. 渲染层 (useFaviconLoader) 在加载失败/超时时做多级 fallback：
+ *    primary favicon_url → https://<domain>/favicon.ico → 本地占位图标
  *
  * 历史问题：
  * - Google favicon (www.google.com/s2/favicons)：在中国大陆不稳定
  * - favicon.cccyun.cc：已返回 403，不可用
  * - favicon.vip：对所有域名（包括内网/不存在的域名）都返回 HTTP 200 但内容是默认占位图，
- *   会"假成功"导致 fallback 链不触发，因此只能放在最后做兜底，不能作为主源/嗅探源
+ *   "假成功"会让浏览器 onError 不触发，导致一直显示占位地球图。
+ *   故已从 fallback 链中移除，仅在 STALE_FAVICON_HOSTS 中保留以兼容老数据 ——
+ *   渲染层识别到老书签存的是这种 URL 时会自动跳过，不再请求它。
  */
 
 // 内存缓存：domain -> favicon URL，避免重复请求
@@ -20,14 +23,12 @@ const faviconCache = new Map<string, string>()
 /**
  * Favicon 备源列表（按优先级排序，用于多级 fallback）
  *
- * 顺序很重要：直连 /favicon.ico 必须在 favicon.vip 之前，
- * 否则对内网网站会一直显示 favicon.vip 的默认地球占位图。
+ * 仅保留直连 /favicon.ico —— 浏览器从用户本机发起，
+ * 对内网（用户已登录的内网站点）和外网都适用，
+ * 加载失败时由渲染层兜底为本地图标，不再依赖第三方"假成功"服务。
  */
 const FAVICON_SERVICES: Array<(domain: string) => string> = [
-  // 主源：直接访问网站根目录（浏览器从用户本机发起，内网/外网都适用）
   (domain) => `https://${domain}/favicon.ico`,
-  // 兜底：第三方服务（即使原站不可达也会返回占位图，不至于裂图）
-  (domain) => `https://www.favicon.vip/get.php?url=${domain}`,
 ]
 
 /** 主源（用于异步抓取失败后写库的兜底地址） */

@@ -310,68 +310,81 @@ ${groupBookmarks.map((b) => `<DT><A HREF="${b.url}">${b.title}</A>`).join("\n")}
 
 
 
-        {/* 弹窗系统 */}
-        <CreateGroupDialog
-          open={activeDialog === "createGroup"}
-          onOpenChange={(open) => !open && setActiveDialog(null)}
-          onConfirm={handleCreateGroup}
-        />
-        <EditGroupDialog
-          open={activeDialog === "editGroup"}
-          onOpenChange={(open) => !open && setActiveDialog(null)}
-          group={selectedGroup}
-          onConfirm={handleEditGroup}
-        />
-        <AddBookmarkDialog
-          open={activeDialog === "addBookmark"}
-          onOpenChange={(open) => {
-            if (!open) {
-              setActiveDialog(null)
-              setPrefillData(null)
-            }
-          }}
-          groups={groups}
-          defaultGroupId={defaultGroupId}
-          prefillData={prefillData}
-          onConfirm={handleAddBookmark}
-        />
-        <EditBookmarkDialog
-          open={activeDialog === "editBookmark"}
-          onOpenChange={(open) => !open && setActiveDialog(null)}
-          groups={groups}
-          bookmark={selectedBookmark}
-          onConfirm={handleEditBookmark}
-        />
-        <ImportBookmarkDialog
-          open={activeDialog === "importBookmark"}
-          onOpenChange={(open) => !open && setActiveDialog(null)}
-          onImportStart={handleImportStart}
-        />
-        <DeleteConfirmDialog
-          open={activeDialog === "deleteGroup"}
-          onOpenChange={(open) => !open && setActiveDialog(null)}
-          title="确定删除分组?"
-          description="删除分组将同时删除该分组下的所有书签，此操作不可撤销。"
-          onConfirm={handleDeleteGroup}
-        />
-        <DeleteConfirmDialog
-          open={activeDialog === "deleteBookmark"}
-          onOpenChange={(open) => !open && setActiveDialog(null)}
-          title="确定删除书签?"
-          description="此操作不可撤销。"
-          onConfirm={handleDeleteBookmark}
-        />
-        <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
+        {/* 弹窗系统 — 条件挂载：仅匹配的 dialog 才实例化组件 */}
+        {activeDialog === "createGroup" && (
+          <CreateGroupDialog
+            open={true}
+            onOpenChange={(open) => !open && setActiveDialog(null)}
+            onConfirm={handleCreateGroup}
+          />
+        )}
+        {activeDialog === "editGroup" && (
+          <EditGroupDialog
+            open={true}
+            onOpenChange={(open) => !open && setActiveDialog(null)}
+            group={selectedGroup}
+            onConfirm={handleEditGroup}
+          />
+        )}
+        {activeDialog === "addBookmark" && (
+          <AddBookmarkDialog
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) {
+                setActiveDialog(null)
+                setPrefillData(null)
+              }
+            }}
+            groups={groups}
+            defaultGroupId={defaultGroupId}
+            prefillData={prefillData}
+            onConfirm={handleAddBookmark}
+          />
+        )}
+        {activeDialog === "editBookmark" && (
+          <EditBookmarkDialog
+            open={true}
+            onOpenChange={(open) => !open && setActiveDialog(null)}
+            groups={groups}
+            bookmark={selectedBookmark}
+            onConfirm={handleEditBookmark}
+          />
+        )}
+        {activeDialog === "importBookmark" && (
+          <ImportBookmarkDialog
+            open={true}
+            onOpenChange={(open) => !open && setActiveDialog(null)}
+            onImportStart={handleImportStart}
+          />
+        )}
+        {activeDialog === "deleteGroup" && (
+          <DeleteConfirmDialog
+            open={true}
+            onOpenChange={(open) => !open && setActiveDialog(null)}
+            title="确定删除分组?"
+            description="删除分组将同时删除该分组下的所有书签，此操作不可撤销。"
+            onConfirm={handleDeleteGroup}
+          />
+        )}
+        {activeDialog === "deleteBookmark" && (
+          <DeleteConfirmDialog
+            open={true}
+            onOpenChange={(open) => !open && setActiveDialog(null)}
+            title="确定删除书签?"
+            description="此操作不可撤销。"
+            onConfirm={handleDeleteBookmark}
+          />
+        )}
+        {showLoginDialog && <LoginDialog open={true} onOpenChange={setShowLoginDialog} />}
 
         {/* 更新通知弹窗 */}
-        {update.result?.latestVersion && (
+        {activeDialog === "updateNotification" && update.result?.latestVersion && (
           <UpdateNotificationDialog
-            open={activeDialog === "updateNotification"}
+            open={true}
             onOpenChange={(open) => !open && setActiveDialog(null)}
             latestVersion={update.result.latestVersion}
             currentVersion={update.currentVersion}
             onUpdate={() => {
-              // 打开 GitHub Releases 页面下载新版本
               window.open(GITHUB_RELEASES_URL, "_blank")
               setActiveDialog(null)
             }}

@@ -1,5 +1,5 @@
 import { BrowserRouter, MemoryRouter, useLocation, useNavigate } from "react-router-dom"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, lazy, Suspense } from "react"
 
 // 检测是否运行在 Chrome 扩展环境中
 const isChromeExtension =
@@ -7,12 +7,16 @@ const isChromeExtension =
   typeof chrome.runtime !== "undefined" &&
   typeof chrome.runtime.id !== "undefined"
 import { BookmarksPage } from "@/pages/BookmarksPage"
-import { ExplorePage } from "@/pages/ExplorePage"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { MainContent } from "@/components/layout/MainContent"
 import { FloatingActions } from "@/components/common/FloatingActions"
 import { useGroups } from "@/hooks/useGroups"
+
+// 懒加载 ExplorePage，减少首屏 JS 解析量
+const ExplorePage = lazy(() =>
+  import("@/pages/ExplorePage").then((m) => ({ default: m.ExplorePage }))
+)
 
 function PlaceholderLayout({ children }: { children: React.ReactNode }) {
   const { groups } = useGroups()
@@ -54,7 +58,9 @@ function AppShell() {
       {isBookmarks && <BookmarksPage />}
       {isExplore && (
         <PlaceholderLayout>
-          <ExplorePage />
+          <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="text-muted-foreground text-sm">加载中...</div></div>}>
+            <ExplorePage />
+          </Suspense>
         </PlaceholderLayout>
       )}
     </>
