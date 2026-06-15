@@ -6,15 +6,15 @@
  * 2. 解析失败 → 直接用 https://<domain>/favicon.ico（浏览器从用户机器请求，
  *    内网网站只要用户处于登录态就能拿到真实图标）
  * 3. 渲染层 (useFaviconLoader) 在加载失败/超时时做多级 fallback：
- *    primary favicon_url → https://<domain>/favicon.ico → 本地占位图标
+ *    primary favicon_url → https://<domain>/favicon.ico → Google favicon API → 本地占位图标
  *
  * 历史问题：
- * - Google favicon (www.google.com/s2/favicons)：在中国大陆不稳定
+ * - Google favicon (www.google.com/s2/favicons)：在中国大陆不稳定，
+ *   已从主源移除但保留为 fallback（带 5s 超时）
  * - favicon.cccyun.cc：已返回 403，不可用
  * - favicon.vip：对所有域名（包括内网/不存在的域名）都返回 HTTP 200 但内容是默认占位图，
  *   "假成功"会让浏览器 onError 不触发，导致一直显示占位地球图。
- *   故已从 fallback 链中移除，仅在 STALE_FAVICON_HOSTS 中保留以兼容老数据 ——
- *   渲染层识别到老书签存的是这种 URL 时会自动跳过，不再请求它。
+ *   故已从 fallback 链中移除，仅在 STALE_FAVICON_HOSTS 中保留以兼容老数据
  */
 
 // 内存缓存：domain -> favicon URL，避免重复请求
@@ -23,12 +23,21 @@ const faviconCache = new Map<string, string>()
 /**
  * Favicon 备源列表（按优先级排序，用于多级 fallback）
  *
- * 仅保留直连 /favicon.ico —— 浏览器从用户本机发起，
- * 对内网（用户已登录的内网站点）和外网都适用，
- * 加载失败时由渲染层兜底为本地图标，不再依赖第三方"假成功"服务。
+ * 渲染层的 useFaviconLoader 按顺序尝试每个候选 URL，
+ * 任意一个成功即停止，全部失败则回退到本地 BookmarkIcon 占位。
+ *
+ * 顺序设计：
+ * 1. 直连 /favicon.ico —— 优先级最高，浏览器从用户本机发起，
+ *    对内网（已登录的内网站点）和外网都适用
+ * 2. Google favicon API —— 许多现代网站不自带 /favicon.ico，
+ *    但 Google 已为其索引了真实图标；若在国内被墙，5s 超时后自动跳过
+ *
+ * 注意：STALE_FAVICON_HOSTS 仅作用于 bookmark.favicon_url（存入的原始值），
+ * 不影响此列表生成的 URL（即 Google API 在这里不会被标记为 stale 跳过）。
  */
 const FAVICON_SERVICES: Array<(domain: string) => string> = [
   (domain) => `https://${domain}/favicon.ico`,
+  (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
 ]
 
 /** 主源（用于异步抓取失败后写库的兜底地址） */
