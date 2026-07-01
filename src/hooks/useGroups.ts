@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/contexts/ToastContext"
 import { BookmarkGroup } from "@/types"
+import { sessionCache } from "@/lib/sessionCache"
 
 const GROUPS_SNAPSHOT_KEY = "minitab_snapshot_groups"
 
@@ -45,12 +46,20 @@ export function useGroups() {
       const data = await dataProvider.getGroups()
       setGroups(data)
       writeGroupsSnapshot(data) // Phase2: 刷新快照
+      sessionCache.setGroups(data) // Phase3: 写入 session 缓存，跨标签页共享
     } catch {
       showToast("error", "获取分组失败，请稍后重试")
     } finally {
       setLoading(false)
     }
   }, [dataProvider, showToast])
+
+  // 挂载后立即从 chrome.storage.session 热更新（跨标签页共享，近零延迟）
+  useEffect(() => {
+    sessionCache.getGroups().then((cached) => {
+      if (cached) setGroups(cached)
+    })
+  }, [])
 
   useEffect(() => {
     // auth 还在加载时不发起请求，等 dataProvider 确定后再 fetch

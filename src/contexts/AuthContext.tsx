@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react"
 import { User, Session } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
+import { sessionCache } from "@/lib/sessionCache"
 import { IDataProvider } from "@/types"
 import { LocalStorageProvider } from "@/providers/LocalStorageProvider"
 import { SupabaseProvider } from "@/providers/SupabaseProvider"
@@ -72,13 +73,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initAuth = async () => {
       try {
+        // 优先从 session 缓存恢复 userId（跨标签页共享，避免 auth provider 切换延迟）
+        const cachedUserId = await sessionCache.getAuthUserId()
+        if (!ignore && cachedUserId) {
+          setDataProvider(getOrCreateSupabaseProvider(supabaseProviderRef, cachedUserId))
+        }
+
         const { data: { session: s } } = await supabase.auth.getSession()
         if (ignore) return
 
         setSession(s)
         setUser(s?.user ?? null)
         if (s?.user) {
+          sessionCache.setAuthUserId(s.user.id) // 写入 session 缓存
           setDataProvider(getOrCreateSupabaseProvider(supabaseProviderRef, s.user.id))
+        } else if (cachedUserId) {
+          // session 已过期，降级到本地 provider
+          supabaseProviderRef.current = null
+          setDataProvider(localProvider)
         }
       } finally {
         if (!ignore) {
@@ -97,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(s?.user ?? null)
 
       if (s?.user) {
+        sessionCache.setAuthUserId(s.user.id) // 写入 session 缓存
         if (event === "SIGNED_IN" && hasLocalUserData()) {
           try {
             await migrateLocalDataToSupabase(s.user.id)
@@ -108,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         supabaseProviderRef.current = null
         setDataProvider(localProvider)
+        sessionCache.clearAll() // 登出时清除所有 session 缓存
       }
     })
 
@@ -131,7 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut()
+    supabaseProviderRef.current = null
     setDataProvider(localProvider)
+    sessionCache.clearAll() // 登出时清除所有 session 缓存
   }
 
   return (
